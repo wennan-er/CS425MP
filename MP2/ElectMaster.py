@@ -8,10 +8,46 @@
    5.Election Completed.
 
    Election Rule2: (use this)
-   1.Each DataNode found there are no MasterNode in system
-   2.
+   1.Each DataNode found there are no MasterNode in system,
+     and will update electionList as everyone is MasterNode
+   2.Each DataNode will broadcast their electionList to all DataNodes,
+     update their electionList based on
+       1.change self master state to False if there is smaller candidate node in list
+         keep self master sate False
+       2.update recent electionList except self
 
 """
+def checkMaster():
+    while True:
+        if self.Master == False && !self.in_progress:
+            self.electionList = [node1:[True, time], node2: [True, time]]
+            self.electionSenderQueue.put(self.electionList)
+            self.in_progress = True
+            electionReceiverThread()
+        sleep(1)
+
+
+
+def electionReceiverThread():
+    while self.electionReceiverQueue not empty:
+        pop
+        finish = updateElectionList()
+        if finish:
+            sleep(3)
+            broadcast new masterNode
+        else:
+            push to SenderQueue
+
+
+def electionSenderThread():
+    while self.electionSenderQueue not empty:
+        for node in list:
+            send ElectionList
+
+
+def updateElectionList():
+
+
 
 """
    Each Node has an electionThread:
