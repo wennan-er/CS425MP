@@ -333,6 +333,8 @@ class Node:
 
     def checkMasterThread(self):
         while self.stillAlive:
+            # Only working if is in the group
+            self.isInGroup.wait()
             print("checking for master")
             time.sleep(0.5)
 
