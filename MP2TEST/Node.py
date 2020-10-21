@@ -333,6 +333,7 @@ class Node:
 
     def checkMasterThread(self):
         while self.stillAlive:
+            print("checking for master")
             time.sleep(0.5)
 
             # case: when failure happens on Master, change self.Master to False
@@ -349,6 +350,7 @@ class Node:
                 self.in_progress = True
             # new master come out
             if self.MyList.Master:
+                print("new master is:",self.MyList.Master)
                 self.in_progress = False
             time.sleep(0.5)
 
