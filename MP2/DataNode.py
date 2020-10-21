@@ -4,11 +4,9 @@ import time
 
 
 
+import socket
 
-
-
-
-
+MAXSIZE = 1024
 
 class DateNode:
     def __init__(self, node_id, address):
@@ -20,7 +18,7 @@ class DateNode:
         # membershipList and fileList
 
         # master elector related information stored in
-        self.membershipList = MemberShipList(
+        self.membershipList = MemberShipList()
         self.fileList       = FileList()
 
         # TODO: Heartbeats Set up
@@ -29,151 +27,172 @@ class DateNode:
 
         # TODO: Lock and critical information
         # master, lo
+        self.masterAddress = (ip port)
+
+
+
+
+    def PUT(self, localfilename, sdfsfilename):
+
+
+        # A thread do the PUT work
+        def threading_putwork(sdfsfilename):
+
+            last_failed = False
+            last_node = None
+
+            # a client only connect to master
+            master_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            master_client.connect(master_client)
+
+            while last_failed:
+
+                # e.g. "ASSIGN a.txt"
+                msg = "ASSIGN "+sdfsfilename
+                master_client.send(msg.encode())
+
+                response = master_client.recv(MAXSIZE).decode()
+                master_client.close()
+                # can't PUT right now
+                if response == "FILE IN USING":
+                    print(response)
+                    exit()
+                # no node available
+                elif response == "FAILED WRITE":
+                    print(response)
+                    exit()
+
+                else:
+                    peer_node_address = findNodeAddress(response)
+
+                    # a client communicate with peer node to transfer
+                    try:
+                        peer_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        peer_client.connect(peer_node_address)
+
+                        # send "SEND a.txt" to peer_client
+                        msg = "SEND "+sdfsfilename
+                        peer_client.send(msg.encode())
+
+                    except:
+                        print("can't connect peer node")
+
+                    localfile = open(localfilename)
+
+                    try:
+
+                        content = localfile.read(MAXSIZE)
+                        while content:
+                                peer_client.send(content)
+                                content = localfile.read(MAXSIZE)
+
+                        localfile.close()
+                        peer_client.close()
+
+                        print("a thread to "+peer_node_address+"finished SENDING JOB")
+                        last_failed = False
+
+                        # send a CONFIRM to master
+                        master_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        master_client.connect(master_client)
+
+                        msg = "CONFIRM "+sdfsfilename + " " + response
+                        master_client.send(msg.encode())
+
+                        master_client.close()
+
+                    except:
+                        print("peer node "+peer_node_address+" is failed")
+                        last_failed = True
+                        last_node   = peer_node_address
+                        print("now repeating")
 
 
 
 
 
+        f = open(localfilename)
+        if f is None:
+            print("CAN'T FIND LOCAL FILE")
+            return
 
-        self.client = MyClient()
-        self.client.getNewList()
+        try:
+            for i in range(4):
+                threading_putworker(sdfsfilename)
 
-    """
-    Call MP1 stuff, life-support Heartbeating System
-    """
-    def HeartbeatSetUp(self):
-        pass
-
-
-    """
-    Create a client connect to server, 
-    return a targetSocket
-    """
-    def Createclient(self, targetNode):
-
-        # read targetNode's (address, port) for the list
-
-        # set up
-
-        # connect
-
-        targetSocket = None
-        return targetSocket
-
-
-    """
-    Each sending node divide a sending job into 4 tasks, handled by 4 threads
-    """
-    def PUT(self, filename):
-        # check file size
-
-
-        thread_pool = []
-        # TODO, list multithread?
-        storage_plan = []
-        # max failed number = 3, so do it 4 times
-        for i in range(4):
-            thread_pool.append(threading.)
-        #
-        # # wait for all 4 threads success
-        # if all(thread_pool):
-        #     send_successful_put(self.master, filename, storage_plan)
-
-        wait(thread)
+        finally:
+            f.close()
 
 
 
+    def GET(self, localfilename, sdfsfilename):
+        try:
+            # a client only connect to master
+            master_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            master_client.connect(master_client)
 
-    """
-    Each thread individually 1. request a storage node from the MasterNode,
-                             2. send the file to the storage node
-                             3. if failed, re-request again
-                             4. if successfully send, change it's result to True, and listening to if new_MasterNode changed
-                             5. if new_MasterNode, let him new the result
-    """
-    def thread_put_work(self, thread_id, filename, tas):
-        # 0. request a storage node:
-        StorageNode = None
-        # TODO master could only decide when know other
-        while StorageNode is None or StorageNode == "FAILED":
-            StorageNode = Send_empty_Request(self.master, filename)
+            # e.g. "FIND a.txt"
+            msg = "FIND " + sdfsfilename
+            master_client.send(msg.encode())
 
-            # 1. send the file to storage node
-            send_result = client_file(StorageNode, filename)
+            response = master_client.recv(MAXSIZE).decode()
+            master_client.close()
+        except:
+            print("can't connect to master node")
 
-            # fail to send, need a reassign
-            if send_result == False:
-                StorageNode = "FAILED"
-                continue
-
-            # 2. successful send a file
-            else:
-                storage_plan[thread_id] = True
-
-    """
-    Create a new client, send a PUT request to target node
-    """
-    def client_PUT(self, targetNode, filename):
-        targetSocket = createClient(targetNode)
-        InterNode_Comm.readLocal_writeSocket(targetSocket, filename)
-
-    """
-    Create a new client, send a GET request to target node
-    """
-    def client_GET(self, targetNode, filename):
-        targetSocket = createClient(targetNode)
-        InterNode_Comm.readSocket_writeLocal(targetSocket, filename)
+        if response == "FILE NOT FOUND OR NOT READABLE":
+            print(response)
+            return
+        avail_node_list = response.split(',')
 
 
+        for avail_node in avail_node_list:
+            # last node is "", which meaning failed
+            if avail_node is None:
+                # arrive here means all nodes failed.
+                print("all avail nodes are FAILED")
+                return
+
+            try:
+                # create a client
+                peer_node_address = self.findNodeAddress(avail_node)
+                peer_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                peer_client.connect(peer_node_address)
 
 
+                # peer_client
+                msg = "GET "+sdfsfilename
+                peer_client.send(msg.encode())
 
-    def GET(self):
+                # write to local file
+                f = open(localfilename)
+                content = peer_client.recv(MAXSIZE)
+                while content:
+                    f.write(content)
+                    content = peer_client.recv(MAXSIZE)
 
-        SendingNode = None
-
-        while SendingNode is None or SendingNode == "FAILED":
-            SendingNode   = client_GET_Request(self.master, filename)
-
-            if SendingNode == "Not right now":
-                print("Master Node says not right now, sleep 3")
-                time.sleep(3)
-                continue
-
-            elif SendingNode == "404 can't find the file":
-
-
-            result = ReceiveFileFrom(SendingNode, filename)
-
-            # something wrong with sending node, need a new one
-            if result == "FAILED:
-                SendingNode == "FAILED"
-                continue
-
-            # success storage
-            else:
-                # write to log
+                f.close()
+                peer_client.close()
+            except:
+                print("one peer node" + avail_node + "failed")
+                print("NOW loop for next")
 
 
+    def DELETE(self, sdfsfilename):
+        try:
+            # a client only connect to master
+            master_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            master_client.connect(master_client)
 
-    """
-    A process consistently check the status of Master
-    """
-    def MasterChecking(self):
+            # e.g. "FIND a.txt"
+            msg = "PURGE " + sdfsfilename
+            master_client.send(msg.encode())
+
+            response = master_client.recv(MAXSIZE).decode()
+            master_client.close()
+        except:
+            print("can't connect to master node")
 
 
-
-    """
-    Lock-related
-    """
-    def get_currMaster(self):
-
-        self.Master
-
-
-
-    """
-    """
-    def STORE(self):
-
-        print(self.Fileist)
+    # given node_id, return (node_ip, node_port)
+    def findNodeAddress(self, node_id):

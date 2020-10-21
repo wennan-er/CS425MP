@@ -40,12 +40,36 @@ def electionReceiverThread():
 
 
 def electionSenderThread():
+
     while self.electionSenderQueue not empty:
         for node in list:
             send ElectionList
 
 
-def updateElectionList():
+def updateElectionList(otherList):
+    countMaster = 0
+    masterID = 11
+    for key,value in otherList:
+        (otherStatus,otherTime) = otherList[key]
+        (myStatus,myTime) = self.electionList[key]
+        if key == self.node_id:
+            continue
+        if myTime < otherTime:
+            self.electionList[key] = (otherStatus,otherTime)
+        (updateStatus, updateTime) = self.electionList[key]
+        if updateStatus == True:
+            countMaster += 1
+            masterID = min(masterID,key)
+    (myStatus, myTime) = self.electionList[self.node_id]
+    if myStatus == True and countMaster > 0:
+        if self.node_id > masterID:
+        self.electionList[self.node_id] = (False, myTime)
+
+
+
+
+
+
 
 
 

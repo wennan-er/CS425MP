@@ -39,9 +39,15 @@ MAXSIZE = 1024
 """
 class MasterHandler(socketserver.BaseRequestHandler):
     
-    #e.g.: {a.txt : ['fa20-cs425-g29-01.cs.illinois.edu','fa20-cs425-g29-02.cs.illinois.edu','fa20-cs425-g29-03.cs.illinois.edu','fa20-cs425-g29-04.cs.illinois.edu']}
+    #e.g.: {a.txt : ['fa20-cs425-g29-01.cs.illinois.edu',
+    # 'fa20-cs425-g29-02.cs.illinois.edu',
+    # 'fa20-cs425-g29-03.cs.illinois.edu',
+    # 'fa20-cs425-g29-04.cs.illinois.edu']}
     file_list = {}
-    # two dimensional dict：e.g.: {a.txt : {{fa20-cs425-g29-10.cs.illinois.edu : 0}, {fa20-cs425-g29-09.cs.illinois.edu : 1}}}
+    # two dimensional dict：e.g.:
+    # {a.txt : {
+    # {fa20-cs425-g29-10.cs.illinois.edu : 0},
+    # {fa20-cs425-g29-09.cs.illinois.edu : 1}}}
     writing_list = defaultdict(defaultdict)
     #e.g.: {a.txt : 'fa20-cs425-g29-01.cs.illinois.edu'}
     writing_file_mapper = {}
