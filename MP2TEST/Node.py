@@ -206,12 +206,12 @@ class Node:
                     server_address = (nodeId, self.MyList.dic[nodeId])
 
                     SendString = List2Str(SendList)
-                    print("Sending String: ", SendString)
+                    print("Sending String heartbeat: ", SendString)
                     try:
                         # Send data
                         sent = sock.sendto(SendString.encode(), server_address)
                     except:
-                        print("Can't Send")
+                        print("Can't Send heartbeat")
 
                     # finally:
                     #     print("send finish")
@@ -363,11 +363,11 @@ class Node:
                 [nodeId, statues, time] = line
                 server_address = (nodeId, self.MyList.dic[nodeId][1])
                 SendString = List2Str(electionList)
-                print("Sending String: ", SendString)
+                print("Sending String election: ", SendString)
                 try:
                     sent = sock.sendto(SendString.encode(), server_address)
                 except:
-                    print("Can't Send")
+                    print("Can't Send election")
 
     def electionReceiverThread(self):
         BUFFERSIZE = 1024
@@ -383,7 +383,7 @@ class Node:
 
             data, Sender = sock.recvfrom(BUFFERSIZE)
             if data:
-                print("just receive:", data)
+                print("just receive election:", data)
                 rec_str = data.decode('UTF-8')
                 # Just for test
                 rec_list = Str2List(rec_str)
