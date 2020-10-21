@@ -20,7 +20,8 @@ class DateNode:
         # master elector related information stored in
         self.membershipList = MemberShipList()
         self.fileList       = FileList()
-
+        self.electionList = dict()
+        self.in_progress = False
         # TODO: Heartbeats Set up
         Heartbeat_process = HeartbeatSetUp()
 
