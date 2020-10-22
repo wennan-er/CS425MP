@@ -45,13 +45,13 @@ def updateElectionList(myList,otherList):
         if myTime < otherTime:
             myList.electionlist[nodeId] = (otherTime,otherStatus)
         (updateStatus, updateTime) = myList.electionlist[nodeId]
-        if updateStatus:
+        if updateStatus != "None":
             countMaster += 1
             masterID = compareID(myList.id, masterID)
         resList.append([nodeId,updateTime,updateStatus])
 
     (myTime, myStatus) = myList.electionlist[myList.id]
-    if myStatus and countMaster > 0:
+    if myStatus != "None" and countMaster > 0:
         if compareID(myList.id, masterID) == masterID:
             myList.leaveElection(myList.id, datetime.datetime.now())
             countMaster -= 1
