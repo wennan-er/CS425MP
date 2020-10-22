@@ -37,7 +37,7 @@ class MembershipList:
         logging.basicConfig(filename=id, level= logging.DEBUG)
 
     def leaveElection(self,node_id, time):
-        self.electionList[node_id] = (False,time)
+        self.electionList[node_id] = ("None",time)
         logging.info("Node %s Leave election at %s", node_id, time)
 
     # default status after JOIN is status

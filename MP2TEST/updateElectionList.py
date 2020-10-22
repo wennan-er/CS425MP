@@ -63,6 +63,7 @@ def updateElectionList(MyList,otherList):
         else:
             myList.Master = 'fa20-cs425-g29-'+'0'+str(masterID)+'.cs.illinois.edu'
         return [[myList.Master, datetime.datetime.now(), myList.Master]]
+    MyList.plot_elect()
     return resList
 
 
