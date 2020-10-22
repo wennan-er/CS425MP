@@ -32,33 +32,36 @@ def updateElectionList(myList,otherList):
     resList = []
     if len(otherList) == 1:
         for line in otherList:
-            [nodeId, otherStatus, otherTime] = line
+            [nodeId, otherTime, otherStatus] = line
             myList.Master = nodeId
             # empty list will be evaluated in workerThread
             return []
 
     for line in otherList:
-        [nodeId, otherStatus, otherTime] = line
-        (myStatus, myTime) = myList.list[nodeId]
+        [nodeId, otherTime, otherStatus] = line
+        (myTime, myStatues) = myList.list[nodeId]
         if nodeId == myList.id:
             continue
         if myTime < otherTime:
-            myList.electionlist[nodeId] = (otherStatus, otherTime)
+            myList.electionlist[nodeId] = (otherTime,otherStatus)
         (updateStatus, updateTime) = myList.electionlist[nodeId]
         if updateStatus:
             countMaster += 1
             masterID = compareID(myList.id, masterID)
-        resList.append([nodeId, updateStatus, updateTime])
+        resList.append([nodeId,updateTime,updateStatus])
 
-    (myStatus, myTime) = myList.electionlist[myList.id]
+    (myTime, myStatus) = myList.electionlist[myList.id]
     if myStatus and countMaster > 0:
         if compareID(myList.id, masterID) == masterID:
             myList.leaveElection(myList.id, datetime.datetime.now())
             countMaster -= 1
-    resList.append([myList.id, myStatus, myTime])
+    resList.append([myList.id, myTime, myStatus])
     if countMaster == 1:
-        myList.Master = masterID
-        return [[masterID, True, datetime.datetime.now()]]
+        if masterID == 10:
+            myList.Master = 'fa20-cs425-g29-'+str(masterID)+'.cs.illinois.edu'
+        else:
+            myList.Master = 'fa20-cs425-g29-'+'0'+str(masterID)+'.cs.illinois.edu'
+        return [[myList.Master, datetime.datetime.now(), myList.Master]]
     return resList
 
 

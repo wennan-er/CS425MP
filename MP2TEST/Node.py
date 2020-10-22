@@ -339,10 +339,10 @@ class Node:
             time.sleep(0.5)
 
             # case: when failure happens on Master, change self.Master to False
-            if self.MyList.Master != False and self.MyList.Master not in self.MyList.list:
-                self.MyList.Master = False
+            if self.MyList.Master != "None" and self.MyList.Master not in self.MyList.list:
+                self.MyList.Master = "None"
             # first enter election progress when self.Master become False
-            if self.MyList.Master == False and not self.in_progress:
+            if self.MyList.Master == "None" and not self.in_progress:
                 elecList = []
                 self.MyList.electionList = dict()
                 for nodeID in self.MyList.list:
@@ -351,7 +351,7 @@ class Node:
                 self.electionSenderQueue.put(elecList)
                 self.in_progress = True
             # new master come out
-            if self.MyList.Master:
+            if self.MyList.Master != "Node":
                 print("new master is:",self.MyList.Master)
                 self.in_progress = False
             time.sleep(0.5)

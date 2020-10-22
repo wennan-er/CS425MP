@@ -16,7 +16,7 @@ class MembershipList:
         self.list = dict()
         self.electionList = dict()
         self.id = id
-        self.Master = False
+        self.Master = "None"
         machine_dic = {'fa20-cs425-g29-01.cs.illinois.edu': [2156,2256],
                        'fa20-cs425-g29-02.cs.illinois.edu': [2157,2257],
                        'fa20-cs425-g29-03.cs.illinois.edu': [2158,2258],
