@@ -396,14 +396,15 @@ class Node:
                 self.electionReceiverQueue.put(rec_list)
 
     def elctionWorkerThread(self):
-        while self.stillAlive and self.MyList.Master == False:
-            otherList = self.electionReceiverQueue.get()
-            if otherList:
-                newList = updateElectionList(self.MyList.electionList,otherList)
-                if not newList:
-                    break
-                else:
-                    self.electionSenderQueue.put(newList)
+        while self.stillAlive:
+            while self.MyList.Master == "None":
+                otherList = self.electionReceiverQueue.get()
+                if otherList:
+                    newList = updateElectionList(self.MyList.electionList,otherList)
+                    if not newList:
+                        break
+                    else:
+                        self.electionSenderQueue.put(newList)
 
 
 if __name__ == "__main__":
