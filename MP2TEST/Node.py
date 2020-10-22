@@ -370,8 +370,8 @@ class Node:
                 # print("Sending String election: ", SendString)
                 try:
                     sent = sock.sendto(SendString.encode(), server_address)
-                # except:
-                #     print("Can't Send election")
+                except:
+                    print('Can not Send election')
 
     def electionReceiverThread(self):
         BUFFERSIZE = 1024
