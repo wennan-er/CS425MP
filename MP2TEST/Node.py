@@ -346,8 +346,8 @@ class Node:
                 elecList = []
                 self.MyList.electionList = dict()
                 for nodeID in self.MyList.list:
-                    elecList.append([nodeID, True, datetime.datetime.now()])
-                    self.MyList.electionList[nodeID] = (True, datetime.datetime.now())
+                    elecList.append([nodeID, datetime.datetime.now(),True])
+                    self.MyList.electionList[nodeID] = (datetime.datetime.now(),True)
                 self.electionSenderQueue.put(elecList)
                 self.in_progress = True
             # new master come out

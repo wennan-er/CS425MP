@@ -89,6 +89,15 @@ class MembershipList:
             print("--node ",node_id, "is ", status, " with heartbeat: ", heartbeat)
         print("---------------------------------------------------------")
 
+    def plot_elect(self):
+        curr_time = datetime.datetime.now()
+        print("------------This is election List---------------------------")
+        print("--node ", self.id, "'s list at ", curr_time, "is follow:")
+        for node_id in self.list.electionList():
+            (time, status) = self.electionList[node_id]
+            print("--node ", node_id, "is ", status, " with time: ", time)
+        print("---------------------------------------------------------")
+
 
 
 if __name__ == "__main__":
