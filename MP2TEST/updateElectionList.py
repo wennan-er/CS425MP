@@ -26,14 +26,15 @@ def compareID(myID, otherID):
 """
 
 
-def updateElectionList(myList,otherList):
+def updateElectionList(MyList,otherList):
     countMaster = 0
     masterID = 11
     resList = []
+    myList = MyList.electionList
     if len(otherList) == 1:
         for line in otherList:
             [nodeId, otherTime, otherStatus] = line
-            myList.Master = nodeId
+            MyList.Master = nodeId
             # empty list will be evaluated in workerThread
             return []
 

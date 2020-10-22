@@ -400,7 +400,7 @@ class Node:
             while self.MyList.Master == "None":
                 otherList = self.electionReceiverQueue.get()
                 if otherList:
-                    newList = updateElectionList(self.MyList.electionList,otherList)
+                    newList = updateElectionList(self.MyList,otherList)
                     if not newList:
                         break
                     else:
