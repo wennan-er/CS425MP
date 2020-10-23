@@ -1,13 +1,7 @@
+import datetime
 
 """
-   Election rule1:
-   1.A masterNode fails(say Node 1)
-   2.Each DataNode will loop through its membershipList, send the elect message to current smallest Node(Node 2)
-   3.When Node 2 received more than half of the messages, Node 2 will be elected as the new masterNode
-   4.Then Node 2 will send confirm information to all DataNodes.
-   5.Election Completed.
-
-   Election Rule2: (use this)
+   Election Rule:
    1.Each DataNode found there are no MasterNode in system,
      and will update electionList as everyone is MasterNode
    2.Each DataNode will broadcast their electionList to all DataNodes,
@@ -17,77 +11,135 @@
        2.update recent electionList except self
 
 """
-def checkMaster():
-    while True:
-        if self.Master == False && !self.in_progress:
-            self.electionList = [node1:[True, time], node2: [True, time]]
-            self.electionSenderQueue.put(self.electionList)
+"""
+    checkMaster runs every 1 second to check is master fails
+    
+"""
+
+def checkMasterThread(self):
+    while self.stillAlive:
+        time.sleep(0.5)
+
+        # case: when failure happens on Master, change self.Master to False
+        if self.Master != False and self.Master not in self.MyList.list:
+            self.Master = False
+        # first enter election progress when self.Master become False
+        if self.Master == False and not self.in_progress:
+            elecList = []
+            self.electionList = dict()
+            for nodeID in self.MyList.list:
+                elecList.append([nodeID,True, datetime.datetime.now()])
+                self.electionList[nodeID] = (True, datetime.datetime.now())
+            self.electionSenderQueue.put(elecList)
             self.in_progress = True
-            electionReceiverThread()
-        sleep(1)
+        # new master come out
+        if self.Master:
+            self.in_progress = False
+        time.sleep(0.5)
 
 
+def electionSenderThread(self):
+    sock = socket.socket(socket.AF_INET,
+                         socket.SOCK_DGRAM)
+    while self.stillAlive:
+        electionList = self.electionSenderQueue.get()
 
-def electionReceiverThread():
-    while self.electionReceiverQueue not empty:
-        pop
-        finish = updateElectionList()
-        if finish:
-            sleep(3)
-            broadcast new masterNode
-        else:
-            push to SenderQueue
+        # send part
+        for line in electionList:
+            [nodeId, statues, time] = line
+            server_address = (nodeId, self.MyList.dic[nodeId][1])
+            SendString = List2Str(electionList)
+            print("Sending String: ", SendString)
+            try:
+                sent = sock.sendto(SendString.encode(), server_address)
+            except:
+                print("Can't Send")
 
+def electionReceiverThread(self):
+    BUFFERSIZE = 1024
+    # Create a TCP/IP socket
+    sock = socket.socket(socket.AF_INET,
+                         socket.SOCK_DGRAM)
+    # Bind the socket to the port
+    server_address = (self.node_id, self.port2)
+    # print("Receiver Working with server_address", server_address)
+    sock.bind(server_address)
 
-def electionSenderThread():
-    while self.electionSenderQueue not empty:
-        for node in list:
-            send ElectionList
+    while self.stillAlive:
 
+        data, Sender = sock.recvfrom(BUFFERSIZE)
+        if data:
+            print("just receive:", data)
+            rec_str = data.decode('UTF-8')
+            # Just for test
+            rec_list = Str2List(rec_str)
 
-def updateElectionList():
-
-
-
-"""
-   Each Node has an electionThread:
-   1.send ReElect message to newMaster
-   2.receive confirmation from newMaster
-"""
-
-def electionThread():
-    now self.Master = NULL
-    for node_id in membershipList:
-        find node with smallest id as newMaster
-    send "ReElect" to newMaster
-    while(1):
-        waiting for confirmation message from newMaster
-        self.Master = newMaster
-        break
-"""
-    Each Node has a listenElectionThread:
-    1.each ReElect message will increment its global variable: electionCount
-    2.after electionCount is more than #nodes/2, ReElect success
-    3.broadcast newMaster to all other nodes in MembershipList
+            # print("received", rec_str)
+            self.electionReceiverQueue.put(rec_list)
 
 """
+   workerThread read from electionReceiverQueue
+   pass electionList to update function
+   
+"""
 
-# global variable
-self.electionCount = 0
-def listenElectionThread():
-    while(1):
-        self.electionCount++
-        if self.electionCount > 1/2 * total:
-            # change
-            self.Master = self.node_id
-            broadcast confirmation newMaster
-            break
+def elctionWorkerThread(self):
+    while self.stillAlive and self.Master == NULL:
+        otherList = self.electionReceiverQueue.get()
+        if otherList:
+            newList = updateElectionList(otherList)
+            if not newList:
+                break
+            else:
+                self.electionSenderQueue.put(newList)
+
+"""
+   some variables:
+     1.countMaster: count how many masters in electionList,
+                    when there is only one left, new master come out
+     2.masterID: the smallest master in electionList
+"""
 
 
-def
+def updateElectionList(otherList):
+    countMaster = 0
+    masterID = 11
+    resList = []
+    if len(otherList) == 1:
+        for line in otherList:
+            [nodeId, otherStatus, otherTime] = line
+            self.Master = nodeId
+            # empty list will be evaluated in workerThread
+            return []
+
+    for line in otherList:
+        [nodeId, otherStatus, otherTime] = line
+        (myStatus, myTime) = self.electionList[nodeId]
+        if nodeId == self.node_id:
+            continue
+        if myTime < otherTime:
+            self.electionList[nodeId] = (otherStatus, otherTime)
+        (updateStatus, updateTime) = self.electionList[nodeId]
+        if updateStatus:
+            countMaster += 1
+            masterID = compareID(key, masterID)
+        resList.append([nodeId, updateStatus, updateTime])
+
+    (myStatus, myTime) = self.electionList[self.node_id]
+    if myStatus and countMaster > 0:
+        if compareID(self.node_id, masterID) == masterID:
+            self.electionList[self.node_id] = (False, myTime)
+            countMaster -= 1
+    resList.append([self.node_id, myStatus, myTime])
+    if countMaster == 1:
+        self.Master = masterID
+        return [[masterID, True, datetime.datetime.now()]]
+    return resList
 
 
+# 'fa20-cs425-g29-01.cs.illinois.edu'
 
-
-
-
+def compareID(myID, otherID):
+    my = myID.split('-')[3]
+    myid = int(my.split('.')[0])
+    return min(myid, otherID)
