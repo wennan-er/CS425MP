@@ -2,6 +2,7 @@ import socketserver
 import socket
 import threading
 # import MembershipList
+import logging
 from random import shuffle
 from collections import defaultdict
 
@@ -37,14 +38,19 @@ MAXSIZE = 1024
             similar to assign case, however, make this node_id as failed, then assign a new one
 
 """
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(name)s: %(message)s',
+                    )
+
+#e.g.: {a.txt : ['fa20-cs425-g29-01.cs.illinois.edu','fa20-cs425-g29-02.cs.illinois.edu','fa20-cs425-g29-03.cs.illinois.edu','fa20-cs425-g29-04.cs.illinois.edu']}
+file_list = {}
+# two dimensional dict：e.g.: {a.txt : {{fa20-cs425-g29-10.cs.illinois.edu : 0}, {fa20-cs425-g29-09.cs.illinois.edu : 1}}}
+writing_list = defaultdict(defaultdict)
+#e.g.: {a.txt : 'fa20-cs425-g29-01.cs.illinois.edu'}
+writing_file_mapper = {}
+
 class MasterHandler(socketserver.BaseRequestHandler):
-    
-    #e.g.: {a.txt : ['fa20-cs425-g29-01.cs.illinois.edu','fa20-cs425-g29-02.cs.illinois.edu','fa20-cs425-g29-03.cs.illinois.edu','fa20-cs425-g29-04.cs.illinois.edu']}
-    file_list = {}
-    # two dimensional dict：e.g.: {a.txt : {{fa20-cs425-g29-10.cs.illinois.edu : 0}, {fa20-cs425-g29-09.cs.illinois.edu : 1}}}
-    writing_list = defaultdict(defaultdict)
-    #e.g.: {a.txt : 'fa20-cs425-g29-01.cs.illinois.edu'}
-    writing_file_mapper = {}
 
     def __init__(self, request, client_address, server):
         self.member_list = ['fa20-cs425-g29-01.cs.illinois.edu',
@@ -57,6 +63,8 @@ class MasterHandler(socketserver.BaseRequestHandler):
                 'fa20-cs425-g29-08.cs.illinois.edu',
                 'fa20-cs425-g29-09.cs.illinois.edu',
                 'fa20-cs425-g29-10.cs.illinois.edu']
+        self.logger = logging.getLogger('MasterHandler')
+        #self.logger.debug('__init__')
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
         return
         
@@ -212,43 +220,45 @@ class MasterServer(socketserver.TCPServer):
 
     # server_address = (localhost, port)
     def __init__(self, server_address, handler_class= MasterHandler):
+        self.logger = logging.getLogger('MasterServer')
+        #self.logger.debug('__init__')
         socketserver.TCPServer.__init__(self, server_address, handler_class)
         return
     
     def server_activate(self):
-        self.logger.debug('server_activate')
+        #self.logger.debug('server_activate')
         socketserver.TCPServer.server_activate(self)
         return
 
     def serve_forever(self):
-        self.logger.debug('waiting for request')
+        #self.logger.debug('waiting for request')
         self.logger.info('Handling requests, press <Ctrl-C> to quit')
         while True:
             self.handle_request()
         return
 
     def handle_request(self):
-        self.logger.debug('handle_request')
+        #self.logger.debug('handle_request')
         return socketserver.TCPServer.handle_request(self)
 
     def verify_request(self, request, client_address):
-        self.logger.debug('verify_request(%s, %s)', request, client_address)
+        #self.logger.debug('verify_request(%s, %s)', request, client_address)
         return socketserver.TCPServer.verify_request(self, request, client_address)
 
     def process_request(self, request, client_address):
-        self.logger.debug('process_request(%s, %s)', request, client_address)
+        #self.logger.debug('process_request(%s, %s)', request, client_address)
         return socketserver.TCPServer.process_request(self, request, client_address)
 
     def server_close(self):
-        self.logger.debug('server_close')
+        #self.logger.debug('server_close')
         return socketserver.TCPServer.server_close(self)
 
     def finish_request(self, request, client_address):
-        self.logger.debug('finish_request(%s, %s)', request, client_address)
+        #self.logger.debug('finish_request(%s, %s)', request, client_address)
         return socketserver.TCPServer.finish_request(self, request, client_address)
 
     def close_request(self, request_address):
-        self.logger.debug('close_request(%s)', request_address)
+        #self.logger.debug('close_request(%s)', request_address)
         return socketserver.TCPServer.close_request(self, request_address)
 
 if __name__ == '__main__':
