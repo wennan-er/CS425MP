@@ -378,13 +378,12 @@ class Node:
 
         while self.stillAlive:
             electMsg = self.electionSenderQueue.get()
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            server_address = (electMsg.msgAddr, electMsg.msgPort)
-            print("destAdrr is",electMsg.msgAddr, "destPort is", electMsg.msgPort)
-            data = pickle.dumps(electMsg)
-            sock.connect(server_address)
-            sock.sendall(data)
-            sock.close()
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                server_address = (electMsg.msgAddr, electMsg.msgPort)
+                data = pickle.dumps(electMsg)
+                sock.connect(server_address)
+                sock.sendall(data)
+                sock.close()
 
 
 
