@@ -21,4 +21,14 @@ M = pickle.dumps(msg)
 s.send(M)
 
 s.close()
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((HOST, 10000))
+
+# Create an instance of ProcessData() to send to server.
+msg = message("askll","33","44")
+# Pickle the object and send it to the server
+M = pickle.dumps(msg)
+s.send(M)
+
 print ('Data Sent to Server')
