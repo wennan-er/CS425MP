@@ -71,8 +71,7 @@ class Node:
                                                  )
         threading_electionReceiver = threading.Thread(target=self.electionReceiverThread,
                                                     )
-        threading_electionWorker = threading.Thread(target=self.elctionWorkerThread,
-                                                      )
+
 
 
 
@@ -87,7 +86,7 @@ class Node:
         threading_checkMaster.start()
         threading_electionSender.start()
         threading_electionReceiver.start()
-        threading_electionWorker.start()
+
 
         self.MyKeyboardListener(self.node_id, self.MyList,
                                 self.broadcastModeLock,
