@@ -383,7 +383,12 @@ class Node:
             print("destAdrr is",electMsg.msgAddr, "destPort is", electMsg.msgPort)
             data = pickle.dumps(electMsg)
             sock.connect(server_address)
-            sock.send(data)
+            try:
+                sock.send(data)
+            except:
+                print("Can't Send election message")
+
+
             sock.close()
 
 
