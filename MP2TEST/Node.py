@@ -383,6 +383,7 @@ class Node:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 server_address = (electMsg.msgAddr, electMsg.msgPort)
                 print('sending to:', electMsg.msgAddr, '  port is:', electMsg.msgPort)
+                print("send msg :", electMsg.msgType )
                 data = pickle.dumps(electMsg)
                 sock.connect(server_address)
                 sock.sendall(data)
@@ -409,12 +410,14 @@ class Node:
             data = pickle.loads(msg_data)
             conn.close()
             if data.msgType == "ask":
+                print("receive ask for master from",data.msgAddr)
                 if self.MyList.Master != "None":
                     replyMsg = message("reply ask", data.msgAddr, data.msgPort,self.MyList.Master)
                     self.electionSenderQueue.put(replyMsg)
 
             elif data.msgType == "reply ask":
                 self.MyList.Master = data.msgData
+
             elif data.msgType == "broadcast master":
                 self.MyList.Master = data.msgData
 
