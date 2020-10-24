@@ -330,7 +330,7 @@ class Node:
 
     def checkMasterThread(self):
         # sleep for join MembershipList
-        time.sleep(2)
+        time.sleep(3)
         while self.stillAlive:
             # Only working if is in the group
             self.isInGroup.wait()
@@ -385,7 +385,7 @@ class Node:
             electMsg = self.electionSenderQueue.get()
             server_address = (electMsg.destAddr, electMsg.destPort)
             data = pickle.dumps(electMsg)
-            print('sending to:', electMsg.msgAddr, '  port is:', electMsg.msgPort)
+            print('sending to:', electMsg.destAddr, '  port is:', electMsg.destPort)
             print("send msg :", electMsg.msgType)
             try:
                 sent = sock.sendto(data, server_address)
