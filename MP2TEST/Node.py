@@ -341,7 +341,7 @@ class Node:
             if self.MyList.Master == "None" and not self.in_electionProgress:
                 # first node enter the group, elect itself to be master
                 if len(self.MyList.list) == 1:
-                    self.MyList.Master = self.node_id
+                     self.MyList.Master = self.node_id
                 else:
                     # loop through all nodes in membershipList, ask for master information
                     for node in self.MyList.list.keys():
@@ -372,7 +372,15 @@ class Node:
 
 
             if self.MyList.Master != "None":
-                self.in_electionProgress = False
+                minMasterId = 11
+                for node in self.MyList.list.keys():
+                    curId = int(node.split('-')[3].split('.')[0])
+                    minMasterId = min(minMasterId, curId)
+                    if minMasterId == 10:
+                        electNodeId = 'fa20-cs425-g29-10.cs.illinois.edu'
+                    else:
+                        electNodeId = 'fa20-cs425-g29-0' + str(minMasterId) + '.cs.illinois.edu'
+                self.MyList.Master = electNodeId
                 print("current master is:", self.MyList.Master)
                 self.in_electionProgress = False
 
