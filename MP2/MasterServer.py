@@ -1,7 +1,9 @@
 import socketserver
 import socket
+import select
 import threading
 # import MembershipList
+import logging
 from random import shuffle
 from collections import defaultdict
 
@@ -37,32 +39,39 @@ MAXSIZE = 1024
             similar to assign case, however, make this node_id as failed, then assign a new one
 
 """
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(name)s: %(message)s',
+                    )
+
+#e.g.: {a.txt : ['fa20-cs425-g29-01.cs.illinois.edu','fa20-cs425-g29-02.cs.illinois.edu','fa20-cs425-g29-03.cs.illinois.edu','fa20-cs425-g29-04.cs.illinois.edu']}
+file_list = {}
+# two dimensional dict：e.g.: {a.txt : {{fa20-cs425-g29-10.cs.illinois.edu : 0}, {fa20-cs425-g29-09.cs.illinois.edu : 1}}}
+writing_list = defaultdict(defaultdict)
+#e.g.: {a.txt : 'fa20-cs425-g29-01.cs.illinois.edu'}
+writing_file_mapper = {}
+
+# Change it as you like.
+datanode_server_port = 6789
+master_server_port = 62536
+
+# This is a fake alive list, please replace it with proper real alive list in the following code.
+member_list = ['fa20-cs425-g29-01.cs.illinois.edu',
+        'fa20-cs425-g29-02.cs.illinois.edu',
+        'fa20-cs425-g29-03.cs.illinois.edu',
+        'fa20-cs425-g29-04.cs.illinois.edu',
+        'fa20-cs425-g29-05.cs.illinois.edu',
+        'fa20-cs425-g29-06.cs.illinois.edu',
+        'fa20-cs425-g29-07.cs.illinois.edu',
+        'fa20-cs425-g29-08.cs.illinois.edu',
+        'fa20-cs425-g29-09.cs.illinois.edu',
+        'fa20-cs425-g29-10.cs.illinois.edu']
+
 class MasterHandler(socketserver.BaseRequestHandler):
-    
-    #e.g.: {a.txt : ['fa20-cs425-g29-01.cs.illinois.edu',
-    # 'fa20-cs425-g29-02.cs.illinois.edu',
-    # 'fa20-cs425-g29-03.cs.illinois.edu',
-    # 'fa20-cs425-g29-04.cs.illinois.edu']}
-    file_list = {}
-    # two dimensional dict：e.g.:
-    # {a.txt : {
-    # {fa20-cs425-g29-10.cs.illinois.edu : 0},
-    # {fa20-cs425-g29-09.cs.illinois.edu : 1}}}
-    writing_list = defaultdict(defaultdict)
-    #e.g.: {a.txt : 'fa20-cs425-g29-01.cs.illinois.edu'}
-    writing_file_mapper = {}
 
     def __init__(self, request, client_address, server):
-        self.member_list = ['fa20-cs425-g29-01.cs.illinois.edu',
-                'fa20-cs425-g29-02.cs.illinois.edu',
-                'fa20-cs425-g29-03.cs.illinois.edu',
-                'fa20-cs425-g29-04.cs.illinois.edu',
-                'fa20-cs425-g29-05.cs.illinois.edu',
-                'fa20-cs425-g29-06.cs.illinois.edu',
-                'fa20-cs425-g29-07.cs.illinois.edu',
-                'fa20-cs425-g29-08.cs.illinois.edu',
-                'fa20-cs425-g29-09.cs.illinois.edu',
-                'fa20-cs425-g29-10.cs.illinois.edu']
+        self.logger = logging.getLogger('MasterHandler')
+        #self.logger.debug('__init__')
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
         return
         
@@ -90,7 +99,7 @@ class MasterHandler(socketserver.BaseRequestHandler):
             else:
                 # assign a new node to this request if there is a node available.
                 reply = self.ASSIGN(filename)
-                MasterHandler.writing_file_mapper[filename] = from_host
+                writing_file_mapper[filename] = from_host
                 
         elif splits[0] == "FIND":
             # return 4 replica hostnames, which are seperated by comma.e.g:"fa20-cs425-g29-07.cs.illinois.edu,fa20-cs425-g29-10.cs.illinois.edu,fa20-cs425-g29-03.cs.illinois.edu,fa20-cs425-g29-09.cs.illinois.edu"
@@ -109,9 +118,9 @@ class MasterHandler(socketserver.BaseRequestHandler):
             
         elif data[:4] == "WUHU":
             # help to debug and see what is the file list on the server.
-            print(MasterHandler.file_list)
-            print(MasterHandler.writing_list)
-            print(MasterHandler.writing_file_mapper)
+            print(file_list)
+            print(writing_list)
+            print(writing_file_mapper)
         
         else:
             reply = 'GET WRONG REQUEST!'
@@ -123,7 +132,7 @@ class MasterHandler(socketserver.BaseRequestHandler):
 
     # Determine whether a file is readable. If a file exists and no one is updating it, it is readable.
     def file_is_readable(self, filename):
-        if filename in MasterHandler.file_list and filename not in MasterHandler.writing_list:
+        if filename in file_list and filename not in writing_list:
             return True
         else:
             return False
@@ -131,7 +140,7 @@ class MasterHandler(socketserver.BaseRequestHandler):
     # acquire the lock by filename, return True if 1. gained, or 2. requester is the locker user, otherwise False
     # Determine whether a file is writable. It can be updated or inserted.
     def file_is_writable(self, filename, from_host):
-        if (filename in MasterHandler.file_list and filename not in MasterHandler.writing_list) or (filename in MasterHandler.writing_list and from_host == MasterHandler.writing_file_mapper[filename]) or (filename not in MasterHandler.file_list):
+        if (filename in file_list and filename not in writing_list) or (filename in writing_list and from_host == writing_file_mapper[filename]) or (filename not in file_list):
             return True
         else:
             return False
@@ -139,7 +148,7 @@ class MasterHandler(socketserver.BaseRequestHandler):
     # Determine whether a file is deletable.
     # If one file exists and not being updated, it is deletable.
     def file_is_deletable(self, filename):
-        if filename in MasterHandler.file_list and filename not in MasterHandler.writing_file_mapper:
+        if filename in file_list and filename not in writing_file_mapper:
             return True
         else:
             return False
@@ -153,23 +162,23 @@ class MasterHandler(socketserver.BaseRequestHandler):
     # If there is no available node, return a error message!
     # 0 - is writing. 1 - success, 2 - failed
     def ASSIGN(self, filename):
-        shuffle(self.member_list)
-        for member in self.member_list:
-            if member not in MasterHandler.writing_list[filename]:
-                MasterHandler.writing_list[filename][member] = 0
-                #print(MasterHandler.writing_list)
+        shuffle(member_list)
+        for member in member_list:
+            if member not in writing_list[filename]:
+                writing_list[filename][member] = 0
+                #print(writing_list)
                 return member
         
         # No available node to write, this write operation is failed!
-        MasterHandler.writing_list.pop(filename)
-        MasterHandler.writing_file_mapper.pop(filename)
+        writing_list.pop(filename)
+        writing_file_mapper.pop(filename)
         return 'FAILED WRITE'
 
     def FIND(self, filename):
         #check read availability of this file
         reply = ""
         if self.file_is_readable(filename):
-            replica_hosts = MasterHandler.file_list[filename]
+            replica_hosts = file_list[filename]
             # hostnames are seperated by comma.
             reply = ",".join(replica_hosts)
         else:
@@ -181,7 +190,7 @@ class MasterHandler(socketserver.BaseRequestHandler):
         reply = ""
         if self.file_is_deletable(filename):
             # Todo: Send some delete instruction to datanode. Or some other ways?
-            MasterHandler.file_list.pop(filename)
+            file_list.pop(filename)
             reply = "PURGE SUCCESS"
         else:
             reply = "FILE NOT EXISTS OR NOT DELETABLE"
@@ -189,21 +198,21 @@ class MasterHandler(socketserver.BaseRequestHandler):
 
     # Make this write replica success. If there are 4 success replicas already, move write it to the file list
     def CONFIRM(self, confirm_node, filename):
-        if confirm_node not in MasterHandler.writing_list[filename]:
+        if confirm_node not in writing_list[filename]:
             return "MISMATCH BETWEEN CONFIRM NODE AND FILENAME"
         else:
-            MasterHandler.writing_list[filename][confirm_node] = 1
+            writing_list[filename][confirm_node] = 1
             cnt = 0
             replica_list = []
-            for key,value in MasterHandler.writing_list[filename].items():
+            for key,value in writing_list[filename].items():
                 if value == 1:
                     cnt += value
                     replica_list.append(key)
             if cnt >= 4:
                 # Write process OK!
-                MasterHandler.file_list[filename] = replica_list
-                MasterHandler.writing_list.pop(filename)
-                MasterHandler.writing_file_mapper.pop(filename)
+                file_list[filename] = replica_list
+                writing_list.pop(filename)
+                writing_file_mapper.pop(filename)
                 return "WRITE 4 RELPLCAS"
             else:
                 return "STILL WRITING"
@@ -211,55 +220,99 @@ class MasterHandler(socketserver.BaseRequestHandler):
     def REASSIGN(self, filename):
         pass
 
-                
-
 # Similar to lib example
 class MasterServer(socketserver.TCPServer):
 
     # server_address = (localhost, port)
     def __init__(self, server_address, handler_class= MasterHandler):
+        self.logger = logging.getLogger('MasterServer')
+        #self.logger.debug('__init__')
         socketserver.TCPServer.__init__(self, server_address, handler_class)
         return
     
     def server_activate(self):
-        self.logger.debug('server_activate')
+        #self.logger.debug('server_activate')
         socketserver.TCPServer.server_activate(self)
         return
 
     def serve_forever(self):
-        self.logger.debug('waiting for request')
+        #self.logger.debug('waiting for request')
         self.logger.info('Handling requests, press <Ctrl-C> to quit')
         while True:
             self.handle_request()
         return
 
     def handle_request(self):
-        self.logger.debug('handle_request')
+        #self.logger.debug('handle_request')
         return socketserver.TCPServer.handle_request(self)
 
     def verify_request(self, request, client_address):
-        self.logger.debug('verify_request(%s, %s)', request, client_address)
+        #self.logger.debug('verify_request(%s, %s)', request, client_address)
         return socketserver.TCPServer.verify_request(self, request, client_address)
 
     def process_request(self, request, client_address):
-        self.logger.debug('process_request(%s, %s)', request, client_address)
+        #self.logger.debug('process_request(%s, %s)', request, client_address)
         return socketserver.TCPServer.process_request(self, request, client_address)
 
     def server_close(self):
-        self.logger.debug('server_close')
+        #self.logger.debug('server_close')
         return socketserver.TCPServer.server_close(self)
 
     def finish_request(self, request, client_address):
-        self.logger.debug('finish_request(%s, %s)', request, client_address)
+        #self.logger.debug('finish_request(%s, %s)', request, client_address)
         return socketserver.TCPServer.finish_request(self, request, client_address)
 
     def close_request(self, request_address):
-        self.logger.debug('close_request(%s)', request_address)
+        #self.logger.debug('close_request(%s)', request_address)
         return socketserver.TCPServer.close_request(self, request_address)
+    
+    def backup_node(self, node_to_backup):
+        # e.g.: node_to_backup = 'fa20-cs425-g29-06.cs.illinois.edu'
+        # 遍历所有文件，找到该node上存的文件，向其他三个node依次发出"REPLICA a.txt target_node"的消息；
+        # 等待10s，socket断掉或者replica失败。成功会返回一个"CONFIRM_REPLICA a.txt"的消息;失败会返回"FAILED_REPLICA a.txt"；
+        # 如果该文件其余三个node也都备份失败，那么本次replica这个文件失败，print出来。然后继续备份下面的文件
+        print("Start to backup node: " + node_to_backup)
+        for key,value in file_list.items():
+            if node_to_backup in value:
+                #delete it from file table first
+                value.remove(node_to_backup)
+                
+                # This key should be backup
+                success = False
+                for host in value:
+                    if host != node_to_backup and host in member_list:
+                        # this host has a replica and it is alive
+                        message = "REPLICA " + key + " " + host
+                        try:
+                            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                            s.connect((host, datanode_server_port))
+                            len_sent = s.send(message)
+                            
+                            # Set timeout as 10
+                            s.setblocking(0)
+                            ready = select.select([s], [], [], 10)
+                            if ready[0]:
+                                # receive response
+                                response = s.recv(1024)
+                                splits = response.split(' ')
+                                if splits[0] == "CONFIRM_REPLICA":
+                                    success = True
+                                    value.append(host)
+                                    print("Replica file {} of failed node {} success".format(key, node_to_backup))
+                                    s.close()
+                                    break
+                                s.close()
+                        except Exception as ex:
+                            print(type(ex))
+                            print(ex)
+                if not success:
+                    print("Replica file {} of failed node {} failed!".format(key, node_to_backup))
+        return
+        
 
 if __name__ == '__main__':
 
-    address = ('localhost', 62536)  # 让内核去分配端口
+    address = ('localhost', master_server_port)  # 让内核去分配端口
     server = MasterServer(address, MasterHandler)
     #server = socketserver.ThreadingTCPServer(('127.0.0.1', 62536), MasterHandler)
     ip, port = server.server_address  # 获取分配到的端口
