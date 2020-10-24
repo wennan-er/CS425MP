@@ -331,7 +331,7 @@ class Node:
 
     def checkMasterThread(self):
         # sleep for join MembershipList
-        time.sleep(1)
+        time.sleep(0.5)
         while self.stillAlive:
             # Only working if is in the group
             self.isInGroup.wait()
@@ -372,7 +372,7 @@ class Node:
             if self.MyList.Master != "None":
                 self.in_electionProgress = False
                 print("current master is:", self.MyList.Master)
-                self.in_progress = False
+                self.in_electionProgress = False
             time.sleep(0.5)
 
     def electionSenderThread(self):
@@ -381,6 +381,7 @@ class Node:
         while self.stillAlive:
             electMsg = self.electionSenderQueue.get()
             server_address = (electMsg.msgAddr, electMsg.msgPort)
+            print("destAdrr is",electMsg.msgAddr, "destPort is", electMsg.msgPort)
             data = pickle.dumps(electMsg)
             sock.connect(server_address)
             sock.send(data)
@@ -422,17 +423,6 @@ class Node:
                         self.electionSenderQueue.put(broadMsg)
 
 
-
-
-    def elctionWorkerThread(self):
-        while self.stillAlive:
-            while self.MyList.Master == "None":
-                otherList = self.electionReceiverQueue.get()
-                #if broadcast msg
-                #if list
-                if otherList:
-                    newList = updateElectionList(self.MyList,otherList)
-                    self.electionSenderQueue.put(newList)
 
 
 if __name__ == "__main__":
