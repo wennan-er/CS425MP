@@ -18,15 +18,13 @@ class Node:
         self.node_id = node_id
         self.MyList = MembershipList(id=self.node_id)
         self.port = self.MyList.dic[node_id][0]
+        self.intro = self.MyList.introducer_list
 
         # new variable for mp2
         self.port2 = self.MyList.dic[node_id][1]
         self.in_progress = False  # indicate in election progress
         self.electionSenderQueue = Queue()
         self.electionReceiverQueue = Queue()
-
-
-        self.intro = self.MyList.introducer_list
 
         # loss rate
         self.loss_rate = 0.1
@@ -203,7 +201,7 @@ class Node:
 
                 # send part
                 for nodeId in nodeIdList:
-                    server_address = (nodeId, self.MyList.dic[nodeId])
+                    server_address = (nodeId, self.MyList.dic[nodeId][0])
 
                     SendString = List2Str(SendList)
                     print("Sending String heartbeat: ", SendString)
