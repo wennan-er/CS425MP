@@ -40,7 +40,7 @@ def updateElectionList(MyList,otherList):
 
     for line in otherList:
         [nodeId, otherTime, otherStatus] = line
-        (myTime, myStatues) = myList.list[nodeId]
+        (myTime, myStatues) = myList.electionlist[nodeId]
         if nodeId == myList.id:
             continue
         if myTime < otherTime:
