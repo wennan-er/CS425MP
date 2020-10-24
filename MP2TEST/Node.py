@@ -349,7 +349,7 @@ class Node:
                 self.electionSenderQueue.put(elecList)
                 self.in_progress = True
             # new master come out
-            if self.MyList.Master != "Node":
+            if self.MyList.Master != "None":
                 print("new master is:",self.MyList.Master)
                 self.in_progress = False
             time.sleep(0.5)
