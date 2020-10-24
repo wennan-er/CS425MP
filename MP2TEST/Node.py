@@ -401,7 +401,7 @@ class Node:
         sock = socket.socket(socket.AF_INET,
                              socket.SOCK_DGRAM)
         # Bind the socket to the port
-        server_address = (self.node_id, self.port)
+        server_address = (self.node_id, self.port2)
         # print("Receiver Working with server_address", server_address)
         sock.bind(server_address)
 
