@@ -384,6 +384,7 @@ class Node:
             data = pickle.dumps(electMsg)
             sock.connect(server_address)
             sock.send(data)
+            sock.close()
 
 
 
