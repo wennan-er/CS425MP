@@ -2,12 +2,12 @@ import sys
 
 from MembershipList import MembershipList
 from WorkerThread import updateMembershipList
-import socket
+import socket, pickle
 import threading
 from queue import Queue
 import time
 import datetime
-from Util import Dict2List, List2Str, Str2List, randomChoose
+from Util import Dict2List, List2Str, Str2List, randomChoose, message
 from updateElectionList import updateElectionList
 
 # In test
@@ -22,7 +22,7 @@ class Node:
 
         # new variable for mp2
         self.port2 = self.MyList.dic[node_id][1]
-        self.in_progress = False  # indicate in election progress
+        self.in_electionProgress = False  # indicate in election progress
         self.electionSenderQueue = Queue()
         self.electionReceiverQueue = Queue()
 
@@ -330,79 +330,107 @@ class Node:
             time.sleep(self.sleepTime)
 
     def checkMasterThread(self):
+        # sleep for join MembershipList
+        time.sleep(1)
         while self.stillAlive:
             # Only working if is in the group
             self.isInGroup.wait()
             print("checking for master")
             time.sleep(0.5)
 
-            # case: when failure happens on Master, change self.Master to False
+            # case1: the first time node enter group, ask for master
+            if self.MyList.Master == "None" and not self.in_electionProgress:
+                # first node enter the group, elect itself to be master
+                if len(self.MyList.list) == 1:
+                    self.MyList.Master = self.node_id
+                else:
+                    # loop through all nodes in membershipList, ask for master information
+                    for node in self.MyList.list.keys():
+                        # message: type:ask destAddr:node, destPort:dic[node][1],data:null
+                        mesg = message("ask", node, self.MyList.dic[node][1])
+                        # put ask message into queue, senderThread will send them to dest
+                        self.electionSenderQueue.put(mesg)
+
+            # case2: when failure happens on Master, change self.Master to False
             if self.MyList.Master != "None" and self.MyList.Master not in self.MyList.list:
                 self.MyList.Master = "None"
-            # first enter election progress when self.Master become False
-            if self.MyList.Master == "None" and not self.in_progress:
-                elecList = []
-                self.MyList.electionList = dict()
-                for nodeID in self.MyList.list:
-                    elecList.append([nodeID, datetime.datetime.now(),nodeID])
-                    self.MyList.electionList[nodeID] = (datetime.datetime.now(),nodeID)
-                self.electionSenderQueue.put(elecList)
-                self.in_progress = True
-            # new master come out
+                self.in_electionProgress = True
+                minMasterId = 11
+                # loop through all nodes in membershipList, find the smallest one as the masternode
+                for node in self.MyList.list.keys():
+                    curId = int(node.split('-')[3].split('.')[0])
+                    minMasterId = min(minMasterId, curId)
+                    if minMasterId == 10:
+                        electNodeId = 'fa20-cs425-g29-10.cs.illinois.edu'
+                    else:
+                        electNodeId = 'fa20-cs425-g29-0'+str(minMasterId)+'.cs.illinois.edu'
+                # send election message to sender, destAddr: electNodeId
+                mesg = message("election", electNodeId, self.MyList.dic[electNodeId][1])
+                self.electionSenderQueue.put(mesg)
+
+
             if self.MyList.Master != "None":
-                print("new master is:",self.MyList.Master)
+                self.in_electionProgress = False
+                print("current master is:", self.MyList.Master)
                 self.in_progress = False
             time.sleep(0.5)
 
     def electionSenderThread(self):
-        sock = socket.socket(socket.AF_INET,
-                             socket.SOCK_DGRAM)
-        while self.stillAlive:
-            electionList = self.electionSenderQueue.get()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-            # send part
-            for line in electionList:
-                [nodeId, statues, time] = line
-                server_address = (nodeId, self.MyList.dic[nodeId][1])
-                SendString = List2Str(electionList)
-                # print("Sending String election: ", SendString)
-                try:
-                    sent = sock.sendto(SendString.encode(), server_address)
-                except:
-                    print('Can not Send election')
+        while self.stillAlive:
+            electMsg = self.electionSenderQueue.get()
+            data = pickle.dumps(electMsg)
+            server_address = (data.msgAddr, data.msgPort)
+            sock.connect(server_address)
+            sock.send(data)
+
 
     def electionReceiverThread(self):
         BUFFERSIZE = 1024
         # Create a TCP/IP socket
         sock = socket.socket(socket.AF_INET,
-                             socket.SOCK_DGRAM)
+                             socket.SOCK_STREAM)
         # Bind the socket to the port
         server_address = (self.node_id, self.port2)
         # print("Receiver Working with server_address", server_address)
         sock.bind(server_address)
-
+        sock.listen(1)
+        masterCount = 0
         while self.stillAlive:
+            (conn, client_address) = sock.accept()
+            msg_data = conn.recv(1024)
+            data = pickle.loads(msg_data)
+            conn.close()
+            if data.type == "ask":
+                if self.MyList.Master != "None":
+                    replyMsg = message("reply ask", data.msgAddr, data.msgPort,self.MyList.Master)
+                    self.electionSenderQueue.put(replyMsg)
 
-            data, Sender = sock.recvfrom(BUFFERSIZE)
-            if data:
-                # print("just receive election:", data)
-                rec_str = data.decode('UTF-8')
-                # Just for test
-                rec_list = Str2List(rec_str)
+            elif data.type == "reply ask":
+                self.MyList.Master = data.msgData
+            elif data.type == "broadcast master":
+                self.MyList.Master = data.msgData
 
-                # print("received", rec_str)
-                self.electionReceiverQueue.put(rec_list)
+            elif data.type == "election":
+                masterCount += 1
+                if masterCount > 1/2*len(self.MyList.list):
+                    for node in self.MyList.list.keys():
+                        broadMsg = message("broadcast master", node, self.MyList.dic[node][1], data.msgAddr)
+                        self.electionSenderQueue.put(broadMsg)
+
+
+
 
     def elctionWorkerThread(self):
         while self.stillAlive:
             while self.MyList.Master == "None":
                 otherList = self.electionReceiverQueue.get()
+                #if broadcast msg
+                #if list
                 if otherList:
                     newList = updateElectionList(self.MyList,otherList)
-                    if not newList:
-                        break
-                    else:
-                        self.electionSenderQueue.put(newList)
+                    self.electionSenderQueue.put(newList)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,22 @@ import random
 import math
 
 """
+message:use for election
+   1.ask master
+   2.reply master
+   3.broadcast master
+   3.election
+"""
+
+class message:
+    def __init__(self, type, address, port, data = 0):
+        self.msgType = type
+        self.msgAddr = address
+        self.msgPort = port
+        self.msgData = data
+
+
+"""
 Converse Dictionary to List
 """
 def Dict2List(Dict):

@@ -27,16 +27,10 @@ def compareID(myID, otherID):
 
 
 def updateElectionList(MyList,otherList):
-    countMaster = 0
-    masterID = 11
+    # record the smallest masterID in election
+    minMasterID = 11
     resList = []
     myList = MyList.electionList
-    if len(otherList) == 1:
-        for line in otherList:
-            [nodeId, otherTime, otherStatus] = line
-            MyList.Master = nodeId
-            # empty list will be evaluated in workerThread
-            return []
 
     for line in otherList:
         [nodeId, otherTime, otherStatus] = line
@@ -47,22 +41,15 @@ def updateElectionList(MyList,otherList):
             myList.electionlist[nodeId] = (otherTime,otherStatus)
         (updateTime,updateStatus) = myList.electionlist[nodeId]
         if updateStatus != "None":
-            countMaster += 1
-            masterID = compareID(myList.id, masterID)
+            minMasterID = compareID(myList.id, minMasterID)
         resList.append([nodeId,updateTime,updateStatus])
 
     (myTime, myStatus) = myList.electionlist[myList.id]
-    if myStatus != "None" and countMaster > 0:
-        if compareID(myList.id, masterID) == masterID:
+    if myStatus != "None":
+        if compareID(myList.id, minMasterID) == minMasterID:
             myList.leaveElection(myList.id, datetime.datetime.now())
-            countMaster -= 1
+            myStatus = "None"
     resList.append([myList.id, datetime.datetime.now(), myStatus])
-    if countMaster == 1:
-        if masterID == 10:
-            myList.Master = 'fa20-cs425-g29-'+str(masterID)+'.cs.illinois.edu'
-        else:
-            myList.Master = 'fa20-cs425-g29-'+'0'+str(masterID)+'.cs.illinois.edu'
-        return [[myList.Master, datetime.datetime.now(), myList.Master]]
     MyList.plot_elect()
     return resList
 
