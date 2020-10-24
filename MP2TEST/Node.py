@@ -345,6 +345,8 @@ class Node:
                 else:
                     # loop through all nodes in membershipList, ask for master information
                     for node in self.MyList.list.keys():
+                        if node == self.node_id:
+                            continue
                         # message: type:ask destAddr:node, destPort:dic[node][1],data:null
                         mesg = message("ask", node, self.MyList.dic[node][1])
                         # put ask message into queue, senderThread will send them to dest
