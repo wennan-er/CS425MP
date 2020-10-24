@@ -375,21 +375,16 @@ class Node:
             time.sleep(0.5)
 
     def electionSenderThread(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         while self.stillAlive:
             electMsg = self.electionSenderQueue.get()
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             server_address = (electMsg.msgAddr, electMsg.msgPort)
             print("destAdrr is",electMsg.msgAddr, "destPort is", electMsg.msgPort)
             data = pickle.dumps(electMsg)
             sock.connect(server_address)
-            try:
-                sock.send(data)
-            except:
-                print("Can't Send election message")
+            sock.send(data)
 
-
-            sock.close()
 
 
     def electionReceiverThread(self):
@@ -401,7 +396,7 @@ class Node:
         server_address = (self.node_id, self.port2)
         # print("Receiver Working with server_address", server_address)
         sock.bind(server_address)
-        sock.listen(1)
+        sock.listen(20)
         masterCount = 0
         while self.stillAlive:
             (conn, client_address) = sock.accept()
