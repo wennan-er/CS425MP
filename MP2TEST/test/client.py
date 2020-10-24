@@ -11,24 +11,13 @@ class message:
 HOST = 'fa20-cs425-g29-01.cs.illinois.edu'
 PORT = 8820
 # Create a socket connection.
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((HOST, PORT))
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    s.connect((HOST, PORT))
+    msg = message("ask", "11", "22")
+    M = pickle.dumps(msg)
+    s.sendall(M)
+    s.close()
 
-# Create an instance of ProcessData() to send to server.
-msg = message("ask","11","22")
-# Pickle the object and send it to the server
-M = pickle.dumps(msg)
-s.send(M)
 
-s.close()
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((HOST, 10000))
-
-# Create an instance of ProcessData() to send to server.
-msg = message("askll","33","44")
-# Pickle the object and send it to the server
-M = pickle.dumps(msg)
-s.send(M)
 
 print ('Data Sent to Server')
