@@ -11,6 +11,7 @@ class message:
 HOST = 'fa20-cs425-g29-01.cs.illinois.edu'
 PORT = 8820
 # Create a socket connection.
+
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect((HOST, PORT))
     msg = message("ask", "11", "22")
@@ -18,6 +19,11 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.sendall(M)
     s.close()
 
-
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    s.connect((HOST, PORT))
+    msg = message("ask", "11", "22")
+    M = pickle.dumps(msg)
+    s.sendall(M)
+    s.close()
 
 print ('Data Sent to Server')

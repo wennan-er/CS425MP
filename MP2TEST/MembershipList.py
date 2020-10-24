@@ -88,6 +88,7 @@ class MembershipList:
         for node_id in self.list.keys():
             (heartbeat, status) = self.list[node_id]
             print("--node ",node_id, "is ", status, " with heartbeat: ", heartbeat)
+        print("master node ",node_id, "is ", self.Master, " with heartbeat: ", heartbeat)
         print("---------------------------------------------------------")
 
     def plot_elect(self):
