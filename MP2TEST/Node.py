@@ -383,7 +383,7 @@ class Node:
                              socket.SOCK_DGRAM)
         while self.stillAlive:
             electMsg = self.electionSenderQueue.get()
-            server_address = (electMsg.msgAddr, electMsg.msgPort)
+            server_address = (electMsg.destAddr, electMsg.destPort)
             data = pickle.dumps(electMsg)
             print('sending to:', electMsg.msgAddr, '  port is:', electMsg.msgPort)
             print("send msg :", electMsg.msgType)
