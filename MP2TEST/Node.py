@@ -367,7 +367,7 @@ class Node:
                     else:
                         electNodeId = 'fa20-cs425-g29-0'+str(minMasterId)+'.cs.illinois.edu'
                 # send election message to sender, destAddr: electNodeId
-                mesg = message("election", electNodeId, self.MyList.dic[electNodeId][1])
+                mesg = message("election", electNodeId, self.MyList.dic[electNodeId][1],self.node_id, self.MyList.dic[self.node_id][1])
                 self.electionSenderQueue.put(mesg)
 
 
