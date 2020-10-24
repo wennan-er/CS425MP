@@ -8,7 +8,7 @@ class message:
         self.msgData = data
 
 
-HOST = 'localhost'
+HOST = 'fa20-cs425-g29-01.cs.illinois.edu'
 PORT = 8820
 # Create a socket connection.
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

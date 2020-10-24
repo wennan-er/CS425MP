@@ -11,10 +11,10 @@ class message:
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Bind the socket to the port
-server_address = ('127.0.0.1',8820)
+server_address = ('fa20-cs425-g29-01.cs.illinois.edu',8820)
 # print("Receiver Working with server_address", server_address)
 sock.bind(server_address)
-sock.listen(1)
+sock.listen(20)
 
 while True:
     print("Waiting for commands")
