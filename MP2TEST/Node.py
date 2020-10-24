@@ -401,8 +401,10 @@ class Node:
         sock.listen(20)
         masterCount = 0
         while self.stillAlive:
+            print("I'm listening")
             (conn, client_address) = sock.accept()
             msg_data = conn.recv(1024)
+            print ('Connected by', client_address)
             data = pickle.loads(msg_data)
             conn.close()
             if data.msgType == "ask":
