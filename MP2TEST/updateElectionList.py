@@ -45,7 +45,7 @@ def updateElectionList(MyList,otherList):
             continue
         if myTime < otherTime:
             myList.electionlist[nodeId] = (otherTime,otherStatus)
-        (updateStatus, updateTime) = myList.electionlist[nodeId]
+        (updateTime,updateStatus) = myList.electionlist[nodeId]
         if updateStatus != "None":
             countMaster += 1
             masterID = compareID(myList.id, masterID)
