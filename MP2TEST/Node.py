@@ -382,6 +382,7 @@ class Node:
             electMsg = self.electionSenderQueue.get()
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 server_address = (electMsg.msgAddr, electMsg.msgPort)
+                print('sending to:', electMsg.msgAddr, '  port is:', electMsg.msgPort)
                 data = pickle.dumps(electMsg)
                 sock.connect(server_address)
                 sock.sendall(data)
