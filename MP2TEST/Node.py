@@ -330,7 +330,7 @@ class Node:
 
     def checkMasterThread(self):
         # sleep for join MembershipList
-        time.sleep(0.5)
+        time.sleep(2)
         while self.stillAlive:
             # Only working if is in the group
             self.isInGroup.wait()
