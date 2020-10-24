@@ -403,21 +403,22 @@ class Node:
             msg_data = conn.recv(1024)
             data = pickle.loads(msg_data)
             conn.close()
-            if data.type == "ask":
+            if data.msgType == "ask":
                 if self.MyList.Master != "None":
                     replyMsg = message("reply ask", data.msgAddr, data.msgPort,self.MyList.Master)
                     self.electionSenderQueue.put(replyMsg)
 
-            elif data.type == "reply ask":
+            elif data.msgType == "reply ask":
                 self.MyList.Master = data.msgData
-            elif data.type == "broadcast master":
+            elif data.msgType == "broadcast master":
                 self.MyList.Master = data.msgData
 
-            elif data.type == "election":
+            elif data.msgType == "election":
                 masterCount += 1
                 if masterCount > 1/2*len(self.MyList.list):
+                    self.MyList.Master = self.node_id
                     for node in self.MyList.list.keys():
-                        broadMsg = message("broadcast master", node, self.MyList.dic[node][1], data.msgAddr)
+                        broadMsg = message("broadcast master", node, self.MyList.dic[node][1], self.MyList.Master)
                         self.electionSenderQueue.put(broadMsg)
 
 
