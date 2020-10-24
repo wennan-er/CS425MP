@@ -348,7 +348,7 @@ class Node:
                         if node == self.node_id:
                             continue
                         # message: type:ask destAddr:node, destPort:dic[node][1],data:null
-                        mesg = message("ask", node, self.MyList.dic[node][1])
+                        mesg = message("ask", node, self.MyList.dic[node][1], self.node_id, self.MyList.dic[self.node_id][1])
                         print("send msg ask to:",node)
                         # put ask message into queue, senderThread will send them to dest
                         self.electionSenderQueue.put(mesg)
@@ -414,7 +414,7 @@ class Node:
             if data.msgType == "ask":
                 print("receive ask for master from",data.msgAddr)
                 if self.MyList.Master != "None":
-                    replyMsg = message("reply ask", data.msgAddr, data.msgPort,self.MyList.Master)
+                    replyMsg = message("reply ask", data.sourceAddr, data.sourcePort,self.node_id, self.MyList.dic[self.node_id][1], self.MyList.Master)
                     self.electionSenderQueue.put(replyMsg)
 
             elif data.msgType == "reply ask":

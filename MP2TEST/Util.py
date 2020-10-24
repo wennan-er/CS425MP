@@ -12,10 +12,12 @@ message:use for election
 """
 
 class message:
-    def __init__(self, type, address, port, data = 0):
+    def __init__(self, type, address1, port1, address2, port2, data = 0):
         self.msgType = type
-        self.msgAddr = address
-        self.msgPort = port
+        self.destAddr = address1
+        self.destPort = port1
+        self.sourceAddr = address2
+        self.sourcePort = port2
         self.msgData = data
 
 
