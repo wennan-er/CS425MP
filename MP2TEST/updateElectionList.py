@@ -56,7 +56,7 @@ def updateElectionList(MyList,otherList):
         if compareID(myList.id, masterID) == masterID:
             myList.leaveElection(myList.id, datetime.datetime.now())
             countMaster -= 1
-    resList.append([myList.id, myTime, myStatus])
+    resList.append([myList.id, datetime.datetime.now(), myStatus])
     if countMaster == 1:
         if masterID == 10:
             myList.Master = 'fa20-cs425-g29-'+str(masterID)+'.cs.illinois.edu'

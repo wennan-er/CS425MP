@@ -10,7 +10,7 @@ import time
 def updateMembershipList(MyList, RecList, t_session, My_node_id):
     t_ignore = datetime.timedelta(seconds=6)
     t_session = datetime.timedelta(seconds= t_session)
-    print("updating")
+    # print("updating")
 
     for line in RecList:
         [nodeId, heartbeat, statues] = line
@@ -86,5 +86,3 @@ def updateMembershipList(MyList, RecList, t_session, My_node_id):
                     else:
                         MyList.update(nodeId, heartbeat, "LEFT")
     MyList.plot()
-
-
