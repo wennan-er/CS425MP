@@ -349,6 +349,7 @@ class Node:
                             continue
                         # message: type:ask destAddr:node, destPort:dic[node][1],data:null
                         mesg = message("ask", node, self.MyList.dic[node][1])
+                        print("send msg ask to:",node)
                         # put ask message into queue, senderThread will send them to dest
                         self.electionSenderQueue.put(mesg)
 
@@ -374,7 +375,7 @@ class Node:
                 self.in_electionProgress = False
                 print("current master is:", self.MyList.Master)
                 self.in_electionProgress = False
-            time.sleep(0.5)
+
 
     def electionSenderThread(self):
 
