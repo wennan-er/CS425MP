@@ -40,9 +40,7 @@ MAXSIZE = 1024
 
 """
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(name)s: %(message)s',
-                    )
+logging.basicConfig(level=logging.DEBUG,format='%(name)s: %(message)s',)
 
 #e.g.: {a.txt : ['fa20-cs425-g29-01.cs.illinois.edu','fa20-cs425-g29-02.cs.illinois.edu','fa20-cs425-g29-03.cs.illinois.edu','fa20-cs425-g29-04.cs.illinois.edu']}
 file_list = {}
@@ -282,7 +280,7 @@ class MasterServer(socketserver.TCPServer):
                 for host in value:
                     if host != node_to_backup and host in member_list:
                         # this host has a replica and it is alive
-                        message = "REPLICA " + key + " " + host
+                        message = "SEND {} {}".format(key, host)
                         try:
                             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                             s.connect((host, datanode_server_port))
@@ -295,13 +293,17 @@ class MasterServer(socketserver.TCPServer):
                                 # receive response
                                 response = s.recv(1024)
                                 splits = response.split(' ')
-                                if splits[0] == "CONFIRM_REPLICA":
+                                if splits[0] == "BACKUP":
                                     success = True
                                     value.append(host)
-                                    print("Replica file {} of failed node {} success".format(key, node_to_backup))
+                                    print("Replica file {} of failed node {} success!".format(key, node_to_backup))
                                     s.close()
                                     break
-                                s.close()
+                                else:
+                                    # This replica operation failed, just go to the next replica datanode.
+                                    s.close()
+                                    continue
+                            s.close()
                         except Exception as ex:
                             print(type(ex))
                             print(ex)
