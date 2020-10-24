@@ -412,7 +412,7 @@ class Node:
 
             data = pickle.loads(msg_data)
             if data.msgType == "ask":
-                print("receive ask for master from",data.msgAddr)
+                print("receive ask for master from",data.sourceAddr)
                 if self.MyList.Master != "None":
                     replyMsg = message("reply ask", data.sourceAddr, data.sourcePort,self.node_id, self.MyList.dic[self.node_id][1], self.MyList.Master)
                     self.electionSenderQueue.put(replyMsg)
