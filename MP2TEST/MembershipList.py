@@ -35,7 +35,7 @@ class MembershipList:
         # set up logging
         # TODO change the config of logging, make it simple
         logging.basicConfig(filename=id, level= logging.DEBUG)
-   
+
 
     def leaveElection(self,node_id, time):
         self.electionList[node_id] = (time,"None")

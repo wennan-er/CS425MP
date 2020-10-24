@@ -380,8 +380,8 @@ class Node:
 
         while self.stillAlive:
             electMsg = self.electionSenderQueue.get()
+            server_address = (electMsg.msgAddr, electMsg.msgPort)
             data = pickle.dumps(electMsg)
-            server_address = (data.msgAddr, data.msgPort)
             sock.connect(server_address)
             sock.send(data)
 
