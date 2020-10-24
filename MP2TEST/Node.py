@@ -378,38 +378,39 @@ class Node:
 
 
     def electionSenderThread(self):
-
+        # Create a TCP/IP socket
+        sock = socket.socket(socket.AF_INET,
+                             socket.SOCK_DGRAM)
         while self.stillAlive:
             electMsg = self.electionSenderQueue.get()
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                server_address = (electMsg.msgAddr, electMsg.msgPort)
-                print('sending to:', electMsg.msgAddr, '  port is:', electMsg.msgPort)
-                print("send msg :", electMsg.msgType )
-                data = pickle.dumps(electMsg)
-                sock.connect(server_address)
-                sock.sendall(data)
-                sock.close()
+            server_address = (electMsg.msgAddr, electMsg.msgPort)
+            data = pickle.dumps(electMsg)
+            print('sending to:', electMsg.msgAddr, '  port is:', electMsg.msgPort)
+            print("send msg :", electMsg.msgType)
+            try:
+                sent = sock.sendto(data, server_address)
+            except:
+                print("Can't Send message")
 
 
 
     def electionReceiverThread(self):
         BUFFERSIZE = 1024
+
         # Create a TCP/IP socket
         sock = socket.socket(socket.AF_INET,
-                             socket.SOCK_STREAM)
+                             socket.SOCK_DGRAM)
         # Bind the socket to the port
-        server_address = (self.node_id, self.port2)
+        server_address = (self.node_id, self.port)
         # print("Receiver Working with server_address", server_address)
         sock.bind(server_address)
-        sock.listen(20)
+
         masterCount = 0
         while self.stillAlive:
             print("I'm listening")
-            (conn, client_address) = sock.accept()
-            msg_data = conn.recv(1024)
-            print ('Connected by', client_address)
+            msg_data, Sender = sock.recvfrom(BUFFERSIZE)
+
             data = pickle.loads(msg_data)
-            conn.close()
             if data.msgType == "ask":
                 print("receive ask for master from",data.msgAddr)
                 if self.MyList.Master != "None":
