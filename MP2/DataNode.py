@@ -440,6 +440,8 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
 
         # "UPDATE "
         elif splits[0] == "UPDATE":
+            print("recv an UPDATE from master")
+            #print("content is :" splits[1])
             self.UPDATE(splits[1])
         pass
 
@@ -1006,7 +1008,7 @@ class DateNode:
                             continue
                         # message: type:ask destAddr:node, destPort:dic[node][1],data:null
                         mesg = message("ask", node, self.MyList.dic[node][1], self.node_id, self.MyList.dic[self.node_id][1])
-                        print("send msg ask to:",node)
+                        # print("send msg ask to:",node)
                         # put ask message into queue, senderThread will send them to dest
                         self.electionSenderQueue.put(mesg)
 
@@ -1059,8 +1061,8 @@ class DateNode:
             electMsg = self.electionSenderQueue.get()
             server_address = (electMsg.destAddr, electMsg.destPort)
             data = pickle.dumps(electMsg)
-            print('sending to:', electMsg.destAddr, '  port is:', electMsg.destPort)
-            print("send msg :", electMsg.msgType)
+            # print('sending to:', electMsg.destAddr, '  port is:', electMsg.destPort)
+            # print("send msg :", electMsg.msgType)
             try:
                 sent = sock.sendto(data, server_address)
             except:
@@ -1086,7 +1088,7 @@ class DateNode:
 
             data = pickle.loads(msg_data)
             if data.msgType == "ask":
-                print("receive ask for master from",data.sourceAddr)
+                # print("receive ask for master from",data.sourceAddr)
                 if self.MyList.Master != "None":
                     replyMsg = message("reply ask", data.sourceAddr, data.sourcePort,self.node_id, self.MyList.dic[self.node_id][1], self.MyList.Master)
                     self.electionSenderQueue.put(replyMsg)
