@@ -121,7 +121,7 @@ class DateNode:
         # create a DataNode Server, let it keep running
         self.datanode_server = DataNodeServer.DataNodeServer(server_address= (self.node_id, DATANODE_SERVER_PORT))
 
-        self.thread_server  = threading.Thread(target= self.Maintain_server,
+        self.thread_server = threading.Thread(target= self.Maintain_server,
                                                  daemon= True)
         self.thread_server.start()
 
@@ -215,7 +215,7 @@ class DateNode:
                     sys.exit()
 
                 # CMD: LEFT node_i
-                elif keyboard_cmd[0] == "LEFT":
+                elif CMD == "LEFT":
                     self.LeftAction()
                     # set isInGroup to False
                     self.isInGroup.clear()
@@ -228,21 +228,6 @@ class DateNode:
 
                 else:
                     print("WRONG CMD, PLEASE RETRY")
-
-
-
-                """
-                MP1:    KILL
-                        LEFT
-                        JOIN
-                """
-
-
-
-
-
-
-
             except:
                 print("SOMETHING WRONG IN RUNNING THIS CMD")
 
