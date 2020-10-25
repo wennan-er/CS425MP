@@ -2,6 +2,7 @@ import socketserver
 import socket
 import select
 import threading
+import time
 # import MembershipList
 import logging
 from random import shuffle
@@ -52,6 +53,9 @@ writing_file_mapper = {}
 # Change it as you like.
 datanode_server_port = 6789
 master_server_port = 62536
+
+# The file list version, it will be updated aftter insertion and deletion.
+file_list_version = 0
 
 # This is a fake alive list, please replace it with proper real alive list in the following code.
 member_list = ['fa20-cs425-g29-01.cs.illinois.edu',
@@ -113,12 +117,15 @@ class MasterHandler(socketserver.BaseRequestHandler):
             confirm_node_name = splits[1]
             filename = splits[2]
             reply = self.CONFIRM(confirm_node_name, filename)
+        elif splits[0] == "SLEEP":
+            time.sleep(7)
             
         elif data[:4] == "WUHU":
             # help to debug and see what is the file list on the server.
             print(file_list)
             print(writing_list)
             print(writing_file_mapper)
+            print('File list version is{}'.format(file_list_version))
         
         else:
             reply = 'GET WRONG REQUEST!'
@@ -189,6 +196,8 @@ class MasterHandler(socketserver.BaseRequestHandler):
         if self.file_is_deletable(filename):
             # Todo: Send some delete instruction to datanode. Or some other ways?
             file_list.pop(filename)
+            global file_list_version
+            file_list_version = file_list_version + 1
             reply = "PURGE SUCCESS"
         else:
             reply = "FILE NOT EXISTS OR NOT DELETABLE"
@@ -209,6 +218,8 @@ class MasterHandler(socketserver.BaseRequestHandler):
             if cnt >= 4:
                 # Write process OK!
                 file_list[filename] = replica_list
+                global file_list_version
+                file_list_version = file_list_version + 1
                 writing_list.pop(filename)
                 writing_file_mapper.pop(filename)
                 return "WRITE 4 RELPLCAS"
@@ -296,6 +307,8 @@ class MasterServer(socketserver.TCPServer):
                                 if splits[0] == "BACKUP":
                                     success = True
                                     value.append(host)
+                                    global file_list_version
+                                    file_list_version = file_list_version + 1
                                     print("Replica file {} of failed node {} success!".format(key, node_to_backup))
                                     s.close()
                                     break
@@ -314,7 +327,7 @@ class MasterServer(socketserver.TCPServer):
 
 if __name__ == '__main__':
 
-    address = ('localhost', master_server_port)  # 让内核去分配端口
+    address = ('localhost', master_server_port)  # 让初始化时，把localhost换成自己的域名
     server = MasterServer(address, MasterHandler)
     #server = socketserver.ThreadingTCPServer(('127.0.0.1', 62536), MasterHandler)
     ip, port = server.server_address  # 获取分配到的端口
