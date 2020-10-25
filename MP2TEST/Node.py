@@ -203,7 +203,7 @@ class Node:
                     server_address = (nodeId, self.MyList.dic[nodeId][0])
 
                     SendString = List2Str(SendList)
-                    print("Sending String heartbeat: ", SendString)
+                    # print("Sending String heartbeat: ", SendString)
                     try:
                         # Send data
                         sent = sock.sendto(SendString.encode(), server_address)
@@ -231,7 +231,7 @@ class Node:
             # print("get a receive job")
             data, Sender = sock.recvfrom(BUFFERSIZE)
             if data:
-                print("just receive:", data)
+                # print("just receive:", data)
                 rec_str = data.decode('UTF-8')
                 # Just for test
                 rec_list = Str2List(rec_str)
