@@ -264,6 +264,56 @@ class DateNode:
         )
         masternode_server.forver()
 
+        # Receiver is a server:
+
+    def MySenderThread(self, BroadcastModeLock):
+        BUFFERSIZE = 4096
+
+        # Create a TCP/IP socket
+        sock = socket.socket(socket.AF_INET,
+                             socket.SOCK_DGRAM)
+        while self.stillAlive:
+
+            # Get the send List
+            SendList = self.SenderQueue.get()
+            # print("get a send job")
+            if SendList:
+                # find the curr BroadcastMode
+                BroadcastModeLock.acquire()
+                try:
+                    curr_mode = self.isGossip
+                    # print("Gossip") if self.isGossip else print("ALL2ALL")
+                finally:
+                    BroadcastModeLock.release()
+
+                # candidateSet = list + introducer - self
+                candidateSet = set()
+                # candidateSet.union(set(self.MyList.list.keys()))
+                # candidateSet.union(set(self.intro))
+                for k in self.MyList.list.keys():
+                    candidateSet.add(k)
+                for k in self.intro:
+                    candidateSet.add(k)
+                candidateSet.discard(set(self.node_id))
+                # print("candidate are:")
+                # print(candidateSet)
+                # SenderList depends on broadcast mode
+                if curr_mode:
+                    nodeIdList = randomChoose(list(candidateSet))
+                else:
+                    nodeIdList = list(candidateSet)
+
+                # send part
+                for nodeId in nodeIdList:
+                    server_address = (nodeId, self.MyList.dic[nodeId][0])
+
+                    SendString = List2Str(SendList)
+                    # print("Sending String heartbeat: ", SendString)
+                    try:
+                        # Send data
+                        sent = sock.sendto(SendString.encode(), server_address)
+                    except:
+                        print("Can't Send heartbeat")
 
     def MyReceiverThread(self):
         BUFFERSIZE = 1024
