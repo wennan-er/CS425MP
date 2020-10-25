@@ -562,7 +562,7 @@ class DateNode:
             while last_failed:
 
                 # e.g. "ASSIGN a.txt"
-                msg = "ASSIGN "+sdfsfilename
+                msg = "ASSIGN "+sdfsfilename +"\n"
 
 
                 response = self.request_from_master(msg)
@@ -588,7 +588,7 @@ class DateNode:
                         peer_client.connect(peer_server_address)
 
                         # send "PUT a.txt" to peer_client
-                        msg = "PUT "+sdfsfilename
+                        msg = "PUT "+sdfsfilename + "\n"
                         peer_client.send(msg.encode())
 
                     except:
@@ -636,7 +636,7 @@ class DateNode:
                     last_failed = False
 
                     # "CONFIRM [node_id] [filename]"
-                    msg = "CONFIRM " + response + " " + sdfsfilename
+                    msg = "CONFIRM " + response + " " + sdfsfilename + "\n"
                     self.request_from_master(msg)
 
 
@@ -668,7 +668,7 @@ class DateNode:
             master_client.connect(self.get_masterserver_address())
 
             # e.g. "FIND a.txt"
-            msg = "FIND " + sdfsfilename
+            msg = "FIND " + sdfsfilename + "\n"
             master_client.send(msg.encode())
 
             response = master_client.recv(MAXSIZE).decode()
@@ -697,7 +697,7 @@ class DateNode:
 
 
                 # peer_client
-                msg = "GET "+sdfsfilename
+                msg = "GET "+sdfsfilename + "\n"
                 peer_client.send(msg.encode())
 
                 # write to local file
@@ -719,8 +719,8 @@ class DateNode:
             master_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             master_client.connect(self.get_masterserver_address())
 
-            # e.g. "PURGE a.txt"
-            msg = "PURGE " + sdfsfilename
+            # e.g. "PURGE a.txt\n"
+            msg = "PURGE " + sdfsfilename + "\n"
             master_client.send(msg.encode())
             response = master_client.recv(MAXSIZE).decode()
             master_client.close()
