@@ -993,6 +993,7 @@ class DateNode:
                 if len(self.MyList.list) == 1:
                     # fist time start master, create masterServer
                     # TODO: start new masterServer
+                    print("start first master")
                     self.MyList.Master = self.node_id
                     self.set_new_master()
                 else:
