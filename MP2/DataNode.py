@@ -954,6 +954,7 @@ class DateNode:
             #
             print("updating")
             tmp_list = []
+            global member_list
             for node_id in list(self.MyList.list.keys()):
                 tmp_list.append(node_id)
             member_list = tmp_list
