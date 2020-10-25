@@ -519,7 +519,8 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
             msg = "FAIL_ACKUP " + sdfsfilename + target_DataNode
             self.request.send(msg.encode())
             
-    def UPDATE(self, )
+    def UPDATE(self, ):
+        pass
 
 # Similar to lib example
 class DataNodeServer(socketserver.TCPServer):
