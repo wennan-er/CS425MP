@@ -737,11 +737,10 @@ class DateNode:
                 elif keyboard_cmd[0] == "store":
                     self.STORE()
 
-<<<<<<< HEAD
                 # "show membershipList"
                 elif keyboard_cmd[0] == "show":
                     self.MyList.plot()
-=======
+
                 # 'ml'
                 elif keyboard_cmd[0] == "ml":
                     print(self.MyList)
@@ -751,7 +750,7 @@ class DateNode:
                 #     print("=================Member List==================")
                 #     for key,value in self.MyList.list.items():
                 #         print("Member ID: {}, Member status: {}", key, value[1])
->>>>>>> 07c99850aaa3011443e2d0599a876c97f1e1737e
+
 
                 # # CMD: show MyNode_d
                 # if CMD == "show MyID":
