@@ -547,14 +547,19 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
             self.request.send(msg.encode())
             
     def UPDATE(self, file_list_json_str):
-        try:
-            print("updating file_list")
-            global file_list
-            file_list = json.loads(file_list_json_str)
-            print(file_list)
-        except Exception as ex:
-            print(ex)
-            print("Update my file list failed!")
+        # try:
+        #     print("updating file_list")
+        #     global file_list
+        #     file_list = json.loads(file_list_json_str)
+        #     print(file_list)
+        # except Exception as ex:
+        #     print(ex)
+        #     print("Update my file list failed!")
+        print("updating file_list")
+        global file_list
+        file_list = json.loads(file_list_json_str)
+        print(file_list)
+        print("finish updating need reverse")
 
 # Similar to lib example
 class DataNodeServer(socketserver.TCPServer):
