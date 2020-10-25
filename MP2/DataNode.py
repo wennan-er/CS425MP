@@ -412,7 +412,7 @@ class DateNode:
                 elif pasted > t_suspect and statues in {"ACTIVE", "JOIN"}:
                     self.MyList.suspect(node_id)
 
-            self.MyList.plot()
+            #self.MyList.plot()
             time.sleep(self.sleepTime)
 
     def checkMasterThread(self):
@@ -421,7 +421,7 @@ class DateNode:
         while self.stillAlive:
             # Only working if is in the group
             self.isInGroup.wait()
-            print("checking for master")
+            #print("checking for master")
             time.sleep(0.5)
 
             # case1: the first time node enter group, ask for master
