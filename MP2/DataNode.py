@@ -3,6 +3,14 @@ import time
 import sys
 import DataNodeServer as DataNodeServer
 
+from MembershipList import MembershipList
+from WorkerThread import updateMembershipList
+import socket, pickle
+import threading
+from queue import Queue
+import time
+import datetime
+from Util import Dict2List, List2Str, Str2List, randomChoose, message
 
 import socket
 
@@ -24,10 +32,19 @@ def findNodeAddress(node_id):
     # return (node_id, DATANODE_SERVER_PORT)
 
 class DateNode:
-    def __init__(self, node_id, address):
+    def __init__(self, node_id):
 
-        # id and address
+        # identity
         self.node_id = node_id
+        self.MyList = MembershipList(id=self.node_id)
+        self.port = self.MyList.dic[node_id][0]
+        self.intro = self.MyList.introducer_list
+
+        # new variable for mp2
+        self.port2 = self.MyList.dic[node_id][1]
+        self.in_electionProgress = False  # indicate in election progress
+        self.electionSenderQueue = Queue()
+        self.electionReceiverQueue = Queue()
 
 
         # FOR TEST ('localhost', port)
@@ -39,15 +56,68 @@ class DateNode:
         # master elector related information stored in
         #self.membershipList = MemberShipList()
         #self.fileList       = FileList()
-        #self.electionList = dict()
-
-
 
         # real master address should be choose by a elector function
         ###### FOR TEST ONLY ######
         self.master_address = ('localhost', MASTERNODE_SERVER_PORT)
         ###### FOR TEST ONLY ######
 
+        ###### VARIABLES FROM MP1 ######
+        # loss rate
+        self.loss_rate = 0.1
+
+        # isInGroup is an Event, default as False
+        self.isInGroup = threading.Event()
+
+        self.stillAlive = True
+
+        # parameter
+        self.sleepTime = 1
+
+        # Boardcast Mode
+        self.isGossip = True
+        self.broadcastModeLock = threading.Lock()
+
+        # creating the Sender Thread
+        self.SenderList = []
+        self.SenderQueue = Queue()
+        threading_sender = threading.Thread(target=self.MySenderThread,
+                                            args=(self.broadcastModeLock,))
+
+        # creating the Receiver Thread
+        self.ReceiverQueue = Queue()
+        threading_receiver = threading.Thread(target=self.MyReceiverThread,
+                                              )
+
+        # increment self heartbeat
+        threading_tiktok = threading.Thread(target=self.MyHeartThread,
+                                            )
+
+        # Worker Thread: compare received List and update self's List
+        threading_worker = threading.Thread(target=self.MyWorkingThread,
+                                            )
+
+        # checker Thread: start check suspect node and label failure later
+        threading_checker = threading.Thread(target=self.MyCheckerThread,
+                                             )
+
+        # election checker Thread: start check if there is no master node
+        threading_checkMaster = threading.Thread(target=self.checkMasterThread,
+                                                 )
+        threading_electionSender = threading.Thread(target=self.electionSenderThread,
+                                                    )
+        threading_electionReceiver = threading.Thread(target=self.electionReceiverThread,
+                                                      )
+        ###### START ALL THE THREADS ######
+        # but Receiver and Tiktok won't work until isInGroup
+        threading_sender.start()
+        threading_receiver.start()
+        threading_tiktok.start()
+        threading_worker.start()
+        threading_checker.start()
+        threading_checkMaster.start()
+        threading_electionSender.start()
+        threading_electionReceiver.start()
 
         # create a DataNode Server, let it keep running
         self.datanode_server = DataNodeServer.DataNodeServer(server_address= (self.address_ip, self.address_port+9))
@@ -173,6 +243,232 @@ class DateNode:
             except:
                 print("SOMETHING WRONG IN RUNNING THIS CMD")
 
+
+    def MyReceiverThread(self):
+        BUFFERSIZE = 1024
+
+        # Create a TCP/IP socket
+        sock = socket.socket(socket.AF_INET,
+                             socket.SOCK_DGRAM)
+        # Bind the socket to the port
+        server_address = (self.node_id, self.port)
+        # print("Receiver Working with server_address", server_address)
+        sock.bind(server_address)
+
+        while self.stillAlive:
+            # Only working if is in the group
+            self.isInGroup.wait()
+
+            # print("get a receive job")
+            data, Sender = sock.recvfrom(BUFFERSIZE)
+            if data:
+                # print("just receive:", data)
+                rec_str = data.decode('UTF-8')
+                # Just for test
+                rec_list = Str2List(rec_str)
+
+                # print("received", rec_str)
+                self.ReceiverQueue.put(rec_list)
+
+    def MyHeartThread(self):
+        while self.stillAlive:
+            # Only working if is in the group
+            self.isInGroup.wait()
+
+            # sleep
+            time.sleep(self.sleepTime)
+
+            # update heartbeat in MyList
+            new_heartbeat = datetime.datetime.now()
+            self.MyList.update(self.node_id, new_heartbeat, "ACTIVE")
+
+            # Create SenderList from MyList
+            ListToSend = Dict2List(self.MyList.list)
+
+            # send to SenderQueue
+            self.SenderQueue.put(ListToSend)
+
+    """
+    Update and Sendout self Heartbeat and status as JOIN
+    """
+
+    def JoinAction(self):
+        # update heartbeat in MyList as JOIN
+        new_heartbeat = datetime.datetime.now()
+        self.MyList.join(self.node_id, new_heartbeat, "JOIN")
+
+        # Create SenderList from MyList
+        ListToSend = Dict2List(self.MyList.list)
+
+        # send to SenderQueue
+        self.SenderQueue.put(ListToSend)
+
+    """
+    Update and Send out self Heartbeat and status as LEFT
+    """
+
+    def LeftAction(self):
+        # update heartbeat in MyList as JOIN
+        new_heartbeat = datetime.datetime.now()
+        self.MyList.left(self.node_id, new_heartbeat, "LEFT")
+
+        # Create SenderList from MyList
+        ListToSend = Dict2List(self.MyList.list)
+
+        # send to SenderQueue
+        self.SenderQueue.put(ListToSend)
+
+    def MyWorkingThread(self):
+        while self.stillAlive:
+
+            RecList = self.ReceiverQueue.get()
+
+            # lock on
+            if RecList:
+                SendList = updateMembershipList(self.MyList, RecList, t_session=5, My_node_id=self.node_id)
+            # lock off
+            # self.SenderQueue.put(SendList)
+
+    def MyCheckerThread(self, t_suspect=5, t_failed=10):
+
+        # converse from int to datetime format
+        t_suspect = datetime.timedelta(seconds=t_suspect)
+        t_failed = datetime.timedelta(seconds=t_failed)
+
+        while self.stillAlive:
+
+            # Only working if is in the group
+            self.isInGroup.wait()
+            print("checking")
+
+            # judge based on curr time
+            curr_time = datetime.datetime.now()
+
+            for node_id in list(self.MyList.list.keys()):
+                (heartbeat, statues) = self.MyList.list[node_id]
+                pasted = curr_time - heartbeat
+
+                # changed from FAIL to REMOVE
+                if pasted > t_failed and statues in {"ACTIVE", "JOIN", "SUSPECT"}:
+                    self.MyList.remove(node_id)
+
+                # if already FAIL or SUSPECT or LEFT, do nothing
+                elif pasted > t_suspect and statues in {"ACTIVE", "JOIN"}:
+                    self.MyList.suspect(node_id)
+
+            self.MyList.plot()
+            time.sleep(self.sleepTime)
+
+    def checkMasterThread(self):
+        # sleep for join MembershipList
+        time.sleep(3)
+        while self.stillAlive:
+            # Only working if is in the group
+            self.isInGroup.wait()
+            print("checking for master")
+            time.sleep(0.5)
+
+            # case1: the first time node enter group, ask for master
+            if self.MyList.Master == "None" and not self.in_electionProgress:
+                # first node enter the group, elect itself to be master
+                if len(self.MyList.list) == 1:
+                     self.MyList.Master = self.node_id
+                else:
+                    # loop through all nodes in membershipList, ask for master information
+                    for node in self.MyList.list.keys():
+                        if node == self.node_id:
+                            continue
+                        # message: type:ask destAddr:node, destPort:dic[node][1],data:null
+                        mesg = message("ask", node, self.MyList.dic[node][1], self.node_id, self.MyList.dic[self.node_id][1])
+                        print("send msg ask to:",node)
+                        # put ask message into queue, senderThread will send them to dest
+                        self.electionSenderQueue.put(mesg)
+
+            # case2: when failure happens on Master, change self.Master to False
+            if self.MyList.Master != "None" and self.MyList.Master not in self.MyList.list:
+                self.MyList.Master = "None"
+                self.in_electionProgress = True
+                minMasterId = 11
+                # loop through all nodes in membershipList, find the smallest one as the masternode
+                for node in self.MyList.list.keys():
+                    curId = int(node.split('-')[3].split('.')[0])
+                    minMasterId = min(minMasterId, curId)
+                    if minMasterId == 10:
+                        electNodeId = 'fa20-cs425-g29-10.cs.illinois.edu'
+                    else:
+                        electNodeId = 'fa20-cs425-g29-0'+str(minMasterId)+'.cs.illinois.edu'
+                # send election message to sender, destAddr: electNodeId
+                mesg = message("election", electNodeId, self.MyList.dic[electNodeId][1],self.node_id, self.MyList.dic[self.node_id][1])
+                self.electionSenderQueue.put(mesg)
+
+
+            if self.MyList.Master != "None":
+                minMasterId = 11
+                for node in self.MyList.list.keys():
+                    curId = int(node.split('-')[3].split('.')[0])
+                    minMasterId = min(minMasterId, curId)
+                    if minMasterId == 10:
+                        electNodeId = 'fa20-cs425-g29-10.cs.illinois.edu'
+                    else:
+                        electNodeId = 'fa20-cs425-g29-0' + str(minMasterId) + '.cs.illinois.edu'
+                self.MyList.Master = electNodeId
+                print("current master is:", self.MyList.Master)
+                self.in_electionProgress = False
+
+
+    def electionSenderThread(self):
+        # Create a TCP/IP socket
+        sock = socket.socket(socket.AF_INET,
+                             socket.SOCK_DGRAM)
+        while self.stillAlive:
+            electMsg = self.electionSenderQueue.get()
+            server_address = (electMsg.destAddr, electMsg.destPort)
+            data = pickle.dumps(electMsg)
+            print('sending to:', electMsg.destAddr, '  port is:', electMsg.destPort)
+            print("send msg :", electMsg.msgType)
+            try:
+                sent = sock.sendto(data, server_address)
+            except:
+                print("Can't Send message")
+
+
+
+    def electionReceiverThread(self):
+        BUFFERSIZE = 1024
+
+        # Create a TCP/IP socket
+        sock = socket.socket(socket.AF_INET,
+                             socket.SOCK_DGRAM)
+        # Bind the socket to the port
+        server_address = (self.node_id, self.port2)
+        # print("Receiver Working with server_address", server_address)
+        sock.bind(server_address)
+
+        masterCount = 0
+        while self.stillAlive:
+            print("I'm listening")
+            msg_data, Sender = sock.recvfrom(BUFFERSIZE)
+
+            data = pickle.loads(msg_data)
+            if data.msgType == "ask":
+                print("receive ask for master from",data.sourceAddr)
+                if self.MyList.Master != "None":
+                    replyMsg = message("reply ask", data.sourceAddr, data.sourcePort,self.node_id, self.MyList.dic[self.node_id][1], self.MyList.Master)
+                    self.electionSenderQueue.put(replyMsg)
+
+            elif data.msgType == "reply ask":
+                self.MyList.Master = data.msgData
+
+            elif data.msgType == "broadcast master":
+                self.MyList.Master = data.msgData
+
+            elif data.msgType == "election":
+                masterCount += 1
+                if masterCount >= 1/2*len(self.MyList.list):
+                    self.MyList.Master = self.node_id
+                    for node in self.MyList.list.keys():
+                        broadMsg = message("broadcast master", node, self.MyList.dic[node][1],self.node_id, self.MyList.dic[self.node_id][1], self.MyList.Master)
+                        self.electionSenderQueue.put(broadMsg)
 
 
 
@@ -380,30 +676,29 @@ class DateNode:
 
     # in real, this should wait for the master_address if there is no available one
     def get_masterserver_address(self):
-
-        if self.master_address is None:
+        # If no master, pass
+        if self.MyList.Master == "None":
             pass
-
-        address = ('fa20-cs425-g29-01.cs.illinois.edu', 9999)
-        return self.master_address
+        # return ('fa20-cs425-g29-01.cs.illinois.edu', 9999)
+        return (self.MyList.Master, self.MyList.dic[self.MyList.Master][1])
 
     # in real, node_id is 'fa20-cs425-g29-01.cs.illinois.edu'
     # in test, node_id is the port '8080',
 
     def get_peerserver_address(self, peer_node_id):
         # need to return server's address
-        peerserver_address = ('localhost', int(peer_node_id) + 9)
+        peerserver_address = (peer_node_id, self.MyList.dic[peer_node_id][1])
+        # peerserver_address = ('localhost', int(peer_node_id) + 9)
 
         return peerserver_address
 
 
 
 if __name__ == "__main__":
-
+    node_id = "fa20-cs425-g29-" + sys.argv[1] + ".cs.illinois.edu"
+    print(f"Node name is : {node_id}")
     port = sys.argv[1]
 
-    address = ('localhost', port)
-    print("this datanode ip is: "+ address[0])
-    print("this datanode port is: " + address[1])
-    datanode = DateNode("test", address)
+
+    datanode = DateNode("test")
 

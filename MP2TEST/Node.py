@@ -372,15 +372,15 @@ class Node:
 
 
             if self.MyList.Master != "None":
-                minMasterId = 11
-                for node in self.MyList.list.keys():
-                    curId = int(node.split('-')[3].split('.')[0])
-                    minMasterId = min(minMasterId, curId)
-                    if minMasterId == 10:
-                        electNodeId = 'fa20-cs425-g29-10.cs.illinois.edu'
-                    else:
-                        electNodeId = 'fa20-cs425-g29-0' + str(minMasterId) + '.cs.illinois.edu'
-                self.MyList.Master = electNodeId
+                # minMasterId = 11
+                # for node in self.MyList.list.keys():
+                #     curId = int(node.split('-')[3].split('.')[0])
+                #     minMasterId = min(minMasterId, curId)
+                #     if minMasterId == 10:
+                #         electNodeId = 'fa20-cs425-g29-10.cs.illinois.edu'
+                #     else:
+                #         electNodeId = 'fa20-cs425-g29-0' + str(minMasterId) + '.cs.illinois.edu'
+                # self.MyList.Master = electNodeId
                 print("current master is:", self.MyList.Master)
                 self.in_electionProgress = False
 
@@ -436,6 +436,8 @@ class Node:
                 if masterCount >= 1/2*len(self.MyList.list):
                     self.MyList.Master = self.node_id
                     for node in self.MyList.list.keys():
+                        # TODO: declare masterService, open up it
+                        # when master fail, close it
                         broadMsg = message("broadcast master", node, self.MyList.dic[node][1],self.node_id, self.MyList.dic[self.node_id][1], self.MyList.Master)
                         self.electionSenderQueue.put(broadMsg)
 
