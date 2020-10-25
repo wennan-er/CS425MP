@@ -2,7 +2,7 @@ import threading
 import time
 import sys
 import DataNodeServer as DataNodeServer
-
+import MasterServer as MasterServer
 from MembershipList import MembershipList
 from WorkerThread import updateMembershipList
 import socket, pickle
@@ -16,9 +16,9 @@ import socket
 
 MAXSIZE = 1024
 
-DATANODE_PORT           = 8080
-#DATANODE_SERVER_PORT    = 8089
-MASTERNODE_SERVER_PORT  = 8099
+DATANODE_PORT           = 8080          # not use yet
+DATANODE_SERVER_PORT    = 8089          # for DataNode Server
+MASTERNODE_SERVER_PORT  = 8099          # If I'm master
 """
     TEST MODE:
         node_id -> ('localhost', node_id)
@@ -27,9 +27,7 @@ MASTERNODE_SERVER_PORT  = 8099
         node_id -> (node_id, constant_server_port)
 
 """
-def findNodeAddress(node_id):
-    return ('localhost', node_id)
-    # return (node_id, DATANODE_SERVER_PORT)
+
 
 class DateNode:
     def __init__(self, node_id):
@@ -45,11 +43,12 @@ class DateNode:
         self.in_electionProgress = False  # indicate in election progress
         self.electionSenderQueue = Queue()
         self.electionReceiverQueue = Queue()
+        self.master_thread = None
 
 
         # FOR TEST ('localhost', port)
-        self.address_ip     = address[0]
-        self.address_port   = int(address[1])
+        # self.address_ip     = address[0]
+        # self.address_port   = int(address[1])
 
         # membershipList and fileList
 
@@ -59,7 +58,7 @@ class DateNode:
 
         # real master address should be choose by a elector function
         ###### FOR TEST ONLY ######
-        self.master_address = ('localhost', MASTERNODE_SERVER_PORT)
+        # self.master_address = ('localhost', MASTERNODE_SERVER_PORT)
         ###### FOR TEST ONLY ######
 
         ###### VARIABLES FROM MP1 ######
@@ -120,11 +119,14 @@ class DateNode:
         threading_electionReceiver.start()
 
         # create a DataNode Server, let it keep running
-        self.datanode_server = DataNodeServer.DataNodeServer(server_address= (self.address_ip, self.address_port+9))
+        self.datanode_server = DataNodeServer.DataNodeServer(server_address= (self.node_id, DATANODE_SERVER_PORT))
 
-        self.thread_server  = threading.Thread(target= self.Maintain_server,
+        self.thread_server = threading.Thread(target= self.Maintain_server,
                                                  daemon= True)
         self.thread_server.start()
+
+        # create a MasterNode Server, when a new master come out, start this server
+        self.master_thread = None
 
 
 
@@ -166,18 +168,14 @@ class DateNode:
                     (ops, sdfsfilename) = keyboard_cmd
                     self.DELETE(sdfsfilename= sdfsfilename)
 
+                # "ls sdfsfilename"
+                elif keyboard_cmd[0] == "ls":
+                    (ops, sdfsfilename) = keyboard_cmd
+                    self.LS(sdfsfilename = sdfsfilename)
 
-                else:
-                    print("WRONG CMD, PLEASE RETRY")
-
-                # # "ls sdfsfilename"
-                # elif keyboard_cmd[0] == "ls":
-                #     (ops, sdfsfilename) = keyboard_cmd
-                #     self.LS(sdfsfilename = sdfsfilename)
-                #
-                # # "store"
-                # elif keyboard_cmd[0] == "store":
-                #     self.STORE()
+                # "store"
+                elif keyboard_cmd[0] == "store":
+                    self.STORE()
 
                 # # CMD: show MyNode_d
                 # if CMD == "show MyID":
@@ -210,39 +208,97 @@ class DateNode:
                 #         print("Gossip") if self.isGossip else print("ALL2ALL")
                 #     finally:
                 #         BroadcastModeLock.release()
+                #         # CMD: KILL node_i
 
+                elif keyboard_cmd[0] == "KILL":
+                    self.stillAlive = False
+                    sys.exit()
 
+                # CMD: LEFT node_i
+                elif keyboard_cmd[0] == "LEFT":
+                    self.LeftAction()
+                    # set isInGroup to False
+                    self.isInGroup.clear()
 
-                """
-                MP1:    KILL
-                        LEFT
-                        JOIN
-                """
+                # CMD: JOIN
+                elif keyboard_cmd[0] == "JOIN":
+                    self.JoinAction()
+                    # set isInGroup to True
+                    self.isInGroup.set()
 
-                # # CMD: KILL node_i
-                # elif keyboard_cmd[0] == "KILL":
-                #     self.stillAlive = False
-                #     sys.exit()
-                #
-                # # CMD: LEFT node_i
-                # elif keyboard_cmd[0] == "LEFT":
-                #     self.LeftAction()
-                #     # set isInGroup to False
-                #     self.isInGroup.clear()
-                #
-                # # CMD: JOIN
-                # elif keyboard_cmd[0] == "JOIN":
-                #     self.JoinAction()
-                #     # set isInGroup to True
-                #     self.isInGroup.set()
-
-
-
-
-
+                else:
+                    print("WRONG CMD, PLEASE RETRY")
             except:
                 print("SOMETHING WRONG IN RUNNING THIS CMD")
 
+    def Maintain_server(self):
+        self.datanode_server.serve_forever()
+
+    def set_new_master(self):
+        self.master_thread = threading.Thread(target= self.create_master_and_run)
+        self.master_thread.start()
+
+    def kill_old_master(self):
+        if self.master_thread != None:
+            self.master_thread.kill()
+            self.master_thread = None
+
+    def create_master_and_run(self):
+        masternode_server = MasterServer.MasterServer(
+            server_address=(self.node_id, MASTERNODE_SERVER_PORT)
+        )
+        masternode_server.serve_forever()
+
+        # Receiver is a server:
+
+    def MySenderThread(self, BroadcastModeLock):
+        BUFFERSIZE = 4096
+
+        # Create a TCP/IP socket
+        sock = socket.socket(socket.AF_INET,
+                             socket.SOCK_DGRAM)
+        while self.stillAlive:
+
+            # Get the send List
+            SendList = self.SenderQueue.get()
+            # print("get a send job")
+            if SendList:
+                # find the curr BroadcastMode
+                BroadcastModeLock.acquire()
+                try:
+                    curr_mode = self.isGossip
+                    # print("Gossip") if self.isGossip else print("ALL2ALL")
+                finally:
+                    BroadcastModeLock.release()
+
+                # candidateSet = list + introducer - self
+                candidateSet = set()
+                # candidateSet.union(set(self.MyList.list.keys()))
+                # candidateSet.union(set(self.intro))
+                for k in self.MyList.list.keys():
+                    candidateSet.add(k)
+                for k in self.intro:
+                    candidateSet.add(k)
+                candidateSet.discard(set(self.node_id))
+                # print("candidate are:")
+                # print(candidateSet)
+                # SenderList depends on broadcast mode
+                if curr_mode:
+                    nodeIdList = randomChoose(list(candidateSet))
+                else:
+                    nodeIdList = list(candidateSet)
+
+                # send part
+                for nodeId in nodeIdList:
+                    server_address = (nodeId, self.MyList.dic[nodeId][0])
+
+                    SendString = List2Str(SendList)
+                    # print("Sending String heartbeat: ", SendString)
+                    try:
+                        # Send data
+                        sent = sock.sendto(SendString.encode(), server_address)
+                    except:
+                        print("Can't Send heartbeat")
 
     def MyReceiverThread(self):
         BUFFERSIZE = 1024
@@ -339,7 +395,7 @@ class DateNode:
 
             # Only working if is in the group
             self.isInGroup.wait()
-            print("checking")
+            # print("checking")
 
             # judge based on curr time
             curr_time = datetime.datetime.now()
@@ -356,7 +412,7 @@ class DateNode:
                 elif pasted > t_suspect and statues in {"ACTIVE", "JOIN"}:
                     self.MyList.suspect(node_id)
 
-            self.MyList.plot()
+            #self.MyList.plot()
             time.sleep(self.sleepTime)
 
     def checkMasterThread(self):
@@ -365,14 +421,17 @@ class DateNode:
         while self.stillAlive:
             # Only working if is in the group
             self.isInGroup.wait()
-            print("checking for master")
+            #print("checking for master")
             time.sleep(0.5)
 
             # case1: the first time node enter group, ask for master
             if self.MyList.Master == "None" and not self.in_electionProgress:
                 # first node enter the group, elect itself to be master
                 if len(self.MyList.list) == 1:
-                     self.MyList.Master = self.node_id
+                    # fist time start master, create masterServer
+                    # TODO: start new masterServer
+                    self.MyList.Master = self.node_id
+                    self.set_new_master()
                 else:
                     # loop through all nodes in membershipList, ask for master information
                     for node in self.MyList.list.keys():
@@ -401,8 +460,9 @@ class DateNode:
                 mesg = message("election", electNodeId, self.MyList.dic[electNodeId][1],self.node_id, self.MyList.dic[self.node_id][1])
                 self.electionSenderQueue.put(mesg)
 
-
+            # case3:
             if self.MyList.Master != "None":
+                # when first enter or a new smaller node join in, they will change to smaller master node
                 minMasterId = 11
                 for node in self.MyList.list.keys():
                     curId = int(node.split('-')[3].split('.')[0])
@@ -411,7 +471,15 @@ class DateNode:
                         electNodeId = 'fa20-cs425-g29-10.cs.illinois.edu'
                     else:
                         electNodeId = 'fa20-cs425-g29-0' + str(minMasterId) + '.cs.illinois.edu'
-                self.MyList.Master = electNodeId
+                if self.MyList.Master != electNodeId:
+                    # if prev master is self, now change to other, kill self's master server
+                    if self.MyList.Master == self.node_id:
+                        self.kill_old_master()
+                        #TODO: kill master
+                    mesg = message("change", electNodeId, self.MyList.dic[electNodeId][1], self.node_id,
+                                   self.MyList.dic[self.node_id][1])
+                    self.electionSenderQueue.put(mesg)
+                    self.MyList.Master = electNodeId
                 print("current master is:", self.MyList.Master)
                 self.in_electionProgress = False
 
@@ -446,7 +514,7 @@ class DateNode:
 
         masterCount = 0
         while self.stillAlive:
-            print("I'm listening")
+            # print("I'm listening")
             msg_data, Sender = sock.recvfrom(BUFFERSIZE)
 
             data = pickle.loads(msg_data)
@@ -462,18 +530,21 @@ class DateNode:
             elif data.msgType == "broadcast master":
                 self.MyList.Master = data.msgData
 
+            elif data.msgType == "change":
+                if self.MyList.Master != self.node_id:
+                    # TODO: start new masterServer
+                    self.set_new_master()
+
             elif data.msgType == "election":
                 masterCount += 1
                 if masterCount >= 1/2*len(self.MyList.list):
                     self.MyList.Master = self.node_id
+                    # TODO: start new masterServer
+                    self.set_new_master()
+                    self.setNewMaster = True
                     for node in self.MyList.list.keys():
                         broadMsg = message("broadcast master", node, self.MyList.dic[node][1],self.node_id, self.MyList.dic[self.node_id][1], self.MyList.Master)
                         self.electionSenderQueue.put(broadMsg)
-
-
-
-    def Maintain_server(self):
-        self.datanode_server.serve_forever()
 
 
 
@@ -620,7 +691,7 @@ class DateNode:
 
             try:
                 # create a client
-                peer_node_address = self.findNodeAddress(avail_node)
+                peer_node_address = self.get_peerserver_address(avail_node)
                 peer_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 peer_client.connect(peer_node_address)
 
@@ -672,33 +743,34 @@ class DateNode:
         return response
 
 
+# in real, this should wait for the master_address if there is no available one
+def get_masterserver_address(self):
+    # If no master, pass
+    if self.MyList.Master == "None":
+        pass
+    # return ('fa20-cs425-g29-01.cs.illinois.edu', 9999)
+    return (self.MyList.Master, MASTERNODE_SERVER_PORT)
 
 
-    # in real, this should wait for the master_address if there is no available one
-    def get_masterserver_address(self):
-        # If no master, pass
-        if self.MyList.Master == "None":
-            pass
-        # return ('fa20-cs425-g29-01.cs.illinois.edu', 9999)
-        return (self.MyList.Master, self.MyList.dic[self.MyList.Master][1])
+# in real, node_id is 'fa20-cs425-g29-01.cs.illinois.edu'
+# in test, node_id is the port '8080',
 
-    # in real, node_id is 'fa20-cs425-g29-01.cs.illinois.edu'
-    # in test, node_id is the port '8080',
+def get_peerserver_address(self, peer_node_id):
+    # need to return server's address
+    peerserver_address = (peer_node_id, DATANODE_SERVER_PORT)
+    # peerserver_address = ('localhost', int(peer_node_id) + 9)
 
-    def get_peerserver_address(self, peer_node_id):
-        # need to return server's address
-        peerserver_address = (peer_node_id, self.MyList.dic[peer_node_id][1])
-        # peerserver_address = ('localhost', int(peer_node_id) + 9)
+    return peerserver_address
 
-        return peerserver_address
+
+
+
 
 
 
 if __name__ == "__main__":
     node_id = "fa20-cs425-g29-" + sys.argv[1] + ".cs.illinois.edu"
     print(f"Node name is : {node_id}")
-    port = sys.argv[1]
 
-
-    datanode = DateNode("test")
+    datanode = DateNode(node_id)
 
