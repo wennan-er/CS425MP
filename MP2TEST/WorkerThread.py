@@ -85,4 +85,4 @@ def updateMembershipList(MyList, RecList, t_session, My_node_id):
                     # case: LEFT
                     else:
                         MyList.update(nodeId, heartbeat, "LEFT")
-    MyList.plot()
+    # MyList.plot()

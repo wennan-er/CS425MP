@@ -330,7 +330,7 @@ class Node:
 
     def checkMasterThread(self):
         # sleep for join MembershipList
-        time.sleep(3)
+        time.sleep(8)
         while self.stillAlive:
             # Only working if is in the group
             self.isInGroup.wait()
@@ -341,6 +341,7 @@ class Node:
             if self.MyList.Master == "None" and not self.in_electionProgress:
                 # first node enter the group, elect itself to be master
                 if len(self.MyList.list) == 1:
+                    # TODO: declare masterService, open up it
                      self.MyList.Master = self.node_id
                 else:
                     # loop through all nodes in membershipList, ask for master information
@@ -372,6 +373,7 @@ class Node:
 
 
             if self.MyList.Master != "None":
+                # when first enter or a new smaller node join in, they will change to smaller master node
                 # minMasterId = 11
                 # for node in self.MyList.list.keys():
                 #     curId = int(node.split('-')[3].split('.')[0])
@@ -380,7 +382,8 @@ class Node:
                 #         electNodeId = 'fa20-cs425-g29-10.cs.illinois.edu'
                 #     else:
                 #         electNodeId = 'fa20-cs425-g29-0' + str(minMasterId) + '.cs.illinois.edu'
-                # self.MyList.Master = electNodeId
+                # if self.MyList.Master != electNodeId:
+                #     self.MyList.Master = electNodeId
                 print("current master is:", self.MyList.Master)
                 self.in_electionProgress = False
 
@@ -434,10 +437,10 @@ class Node:
             elif data.msgType == "election":
                 masterCount += 1
                 if masterCount >= 1/2*len(self.MyList.list):
+                    # TODO: declare masterService, open up it
                     self.MyList.Master = self.node_id
                     for node in self.MyList.list.keys():
-                        # TODO: declare masterService, open up it
-                        # when master fail, close it
+                        # TODO: when master fail, close it
                         broadMsg = message("broadcast master", node, self.MyList.dic[node][1],self.node_id, self.MyList.dic[self.node_id][1], self.MyList.Master)
                         self.electionSenderQueue.put(broadMsg)
 
