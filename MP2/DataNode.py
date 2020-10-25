@@ -95,7 +95,7 @@ file_list_version = 0
 # synchronize member_list and myList.list
 member_list = []
 # global variable for MembershipList
-membershipList
+membershipList = MembershipList(id=0)
 isMaster = False
 
 # This function is defined as a global function because the MasterHandler and MasterServer will call this function both.
