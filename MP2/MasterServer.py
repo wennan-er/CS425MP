@@ -225,7 +225,7 @@ class MasterHandler(socketserver.BaseRequestHandler):
             file_list.pop(filename)
             global file_list_version
             file_list_version = file_list_version + 1
-            UPDATE()
+            #UPDATE()
             reply = "PURGE SUCCESS"
         else:
             reply = "FILE NOT EXISTS OR NOT DELETABLE"
@@ -248,7 +248,7 @@ class MasterHandler(socketserver.BaseRequestHandler):
                 file_list[filename] = replica_list
                 global file_list_version
                 file_list_version = file_list_version + 1
-                UPDATE()
+                #UPDATE()
                 writing_list.pop(filename)
                 writing_file_mapper.pop(filename)
                 return "WRITE 4 RELPLCAS"
@@ -338,7 +338,7 @@ class MasterServer(socketserver.TCPServer):
                                     value.append(host)
                                     global file_list_version
                                     file_list_version = file_list_version + 1
-                                    UPDATE()
+                                    #UPDATE()
                                     print("Replica file {} of failed node {} success!".format(key, node_to_backup))
                                     s.close()
                                     break
