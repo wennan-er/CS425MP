@@ -788,6 +788,7 @@ class DateNode:
     def set_new_master(self):
         self.master_thread = threading.Thread(target= self.create_master_and_run)
         self.master_thread.start()
+        print("start master")
         global isMaster
         isMaster = True
 
