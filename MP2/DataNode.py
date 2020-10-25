@@ -428,6 +428,7 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
         # "PUT a.txt"
         elif splits[0] == "PUT":
             self.PUT(splits[1])
+            self.request.send("ACK")
 
         # "SEND a.txt node_id"
         elif splits[0] == "SEND":
@@ -511,6 +512,13 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
             # send "PUT a.txt" to peer_client
             msg = "PUT " + sdfsfilename
             peer_client.send(msg.encode())
+
+            # wait for peer node response
+            response = peer_client.recv(MAXSIZE)
+            if response == "ACK":
+                pass
+            else:
+                print("peer node not ACK")
 
             content = sdfsfile.read(MAXSIZE)
             while content:
@@ -1108,7 +1116,7 @@ class DateNode:
             while last_failed:
 
                 # e.g. "ASSIGN a.txt"
-                msg = "ASSIGN "+sdfsfilename +"\n"
+                msg = "ASSIGN "+sdfsfilename
 
 
                 response = self.request_from_master(msg)
@@ -1134,8 +1142,15 @@ class DateNode:
                         peer_client.connect(peer_server_address)
 
                         # send "PUT a.txt" to peer_client
-                        msg = "PUT "+sdfsfilename + "\n"
+                        msg = "PUT "+sdfsfilename
                         peer_client.send(msg.encode())
+
+                        # wait for peer node response
+                        response = peer_client.recv(MAXSIZE)
+                        if response == "ACK":
+                            pass
+                        else:
+                            print("peer node not ACK")
 
                     except:
                         print("can't connect peer node")
@@ -1159,7 +1174,7 @@ class DateNode:
                         last_failed = False
 
                         # confirm with master
-                        msg = "CONFIRM "+ response + " " + sdfsfilename +"\n"
+                        msg = "CONFIRM "+ response + " " + sdfsfilename
                         self.request_from_master(msg)
 
                     except:
@@ -1197,7 +1212,7 @@ class DateNode:
             master_client.connect(self.get_masterserver_address())
 
             # e.g. "FIND a.txt"
-            msg = "FIND " + sdfsfilename + "\n"
+            msg = "FIND " + sdfsfilename
             master_client.send(msg.encode())
 
             response = master_client.recv(MAXSIZE).decode()
@@ -1226,7 +1241,7 @@ class DateNode:
 
 
                 # peer_client
-                msg = "GET "+sdfsfilename + "\n"
+                msg = "GET "+sdfsfilename
                 peer_client.send(msg.encode())
 
                 # write to local file
@@ -1252,7 +1267,7 @@ class DateNode:
             master_client.connect(self.get_masterserver_address())
 
             # e.g. "PURGE a.txt\n"
-            msg = "PURGE " + sdfsfilename + "\n"
+            msg = "PURGE " + sdfsfilename
             master_client.send(msg.encode())
             response = master_client.recv(MAXSIZE).decode()
             master_client.close()
