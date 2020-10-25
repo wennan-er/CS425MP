@@ -177,45 +177,45 @@ class DateNode:
                 elif keyboard_cmd[0] == "store":
                     self.STORE()
 
-                # CMD: show MyNode_d
-                if CMD == "show MyID":
-                    print("My node_id is: " + self.node_id)
-
-                # CMD: show MyList
-                elif CMD == "show MyList":
-                    print(self.MyList)
-
-                # CMD: switch broadcast mode to ALL2ALL
-                elif CMD == "switch to ALL2ALL":
-                    BroadcastModeLock.acquire()
-                    try:
-                        self.isGossip = False
-                    finally:
-                        BroadcastModeLock.release()
-
-                # CMD: switch broadcast mode to GOSSIP
-                elif CMD == "switch to GOSSIP":
-                    BroadcastModeLock.acquire()
-                    try:
-                        self.isGossip = True
-                    finally:
-                        BroadcastModeLock.release()
-
-                # CMD: show the current broadcast
-                elif CMD == "show curr_mode":
-                    BroadcastModeLock.acquire()
-                    try:
-                        print("Gossip") if self.isGossip else print("ALL2ALL")
-                    finally:
-                        BroadcastModeLock.release()
-                        # CMD: KILL node_i
+                # # CMD: show MyNode_d
+                # if CMD == "show MyID":
+                #     print("My node_id is: " + self.node_id)
+                #
+                # # CMD: show MyList
+                # elif CMD == "show MyList":
+                #     print(self.MyList)
+                #
+                # # CMD: switch broadcast mode to ALL2ALL
+                # elif CMD == "switch to ALL2ALL":
+                #     BroadcastModeLock.acquire()
+                #     try:
+                #         self.isGossip = False
+                #     finally:
+                #         BroadcastModeLock.release()
+                #
+                # # CMD: switch broadcast mode to GOSSIP
+                # elif CMD == "switch to GOSSIP":
+                #     BroadcastModeLock.acquire()
+                #     try:
+                #         self.isGossip = True
+                #     finally:
+                #         BroadcastModeLock.release()
+                #
+                # # CMD: show the current broadcast
+                # elif CMD == "show curr_mode":
+                #     BroadcastModeLock.acquire()
+                #     try:
+                #         print("Gossip") if self.isGossip else print("ALL2ALL")
+                #     finally:
+                #         BroadcastModeLock.release()
+                #         # CMD: KILL node_i
 
                 elif keyboard_cmd[0] == "KILL":
                     self.stillAlive = False
                     sys.exit()
 
                 # CMD: LEFT node_i
-                elif CMD == "LEFT":
+                elif keyboard_cmd[0] == "LEFT":
                     self.LeftAction()
                     # set isInGroup to False
                     self.isInGroup.clear()
