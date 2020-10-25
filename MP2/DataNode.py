@@ -952,11 +952,12 @@ class DateNode:
             #self.MyList.plot()
             # TODO: update membershipList wrt. global memberlist
             #
+            print("updating")
             tmp_list = []
             for node_id in list(self.MyList.list.keys()):
                 tmp_list.append(node_id)
             member_list = tmp_list
-
+            print(member_list)
             time.sleep(self.sleepTime)
 
     def checkMasterThread(self):
