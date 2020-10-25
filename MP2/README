@@ -34,3 +34,17 @@ MP2 file ops
 
 			- "store"
 
+
+TODO:
+	DataNodeServer: Receive FileList
+			
+	DataNode:	kill_old_master -> how to kill a thread 
+			line:243 terminate
+			
+	MasterNode: 	List
+	
+	
+	
+	
+	
+	
