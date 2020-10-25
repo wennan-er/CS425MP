@@ -480,7 +480,7 @@ class DateNode:
                                    self.MyList.dic[self.node_id][1])
                     self.electionSenderQueue.put(mesg)
                     self.MyList.Master = electNodeId
-                print("current master is:", self.MyList.Master)
+                #print("current master is:", self.MyList.Master)
                 self.in_electionProgress = False
 
 
@@ -651,7 +651,7 @@ class DateNode:
         # create a pool to control the thread
         thread_pool = []
         try:
-            for i in range(1):
+            for i in range(4):
                 thread_putworker = threading.Thread(target= threading_putwork,
                                                     args=(sdfsfilename,))
                 thread_putworker.start()
