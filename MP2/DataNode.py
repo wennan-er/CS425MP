@@ -16,9 +16,9 @@ import socket
 
 MAXSIZE = 1024
 
-DATANODE_PORT           = 8080
-#DATANODE_SERVER_PORT    = 8089
-MASTERNODE_SERVER_PORT  = 8099
+DATANODE_PORT           = 8080          # not use yet
+DATANODE_SERVER_PORT    = 8089          # for DataNode Server
+MASTERNODE_SERVER_PORT  = 8099          # If I'm master
 """
     TEST MODE:
         node_id -> ('localhost', node_id)
@@ -27,9 +27,7 @@ MASTERNODE_SERVER_PORT  = 8099
         node_id -> (node_id, constant_server_port)
 
 """
-def findNodeAddress(node_id):
-    return ('localhost', node_id)
-    # return (node_id, DATANODE_SERVER_PORT)
+
 
 class DateNode:
     def __init__(self, node_id):
@@ -49,8 +47,8 @@ class DateNode:
 
 
         # FOR TEST ('localhost', port)
-        self.address_ip     = address[0]
-        self.address_port   = int(address[1])
+        # self.address_ip     = address[0]
+        # self.address_port   = int(address[1])
 
         # membershipList and fileList
 
@@ -60,7 +58,7 @@ class DateNode:
 
         # real master address should be choose by a elector function
         ###### FOR TEST ONLY ######
-        self.master_address = ('localhost', MASTERNODE_SERVER_PORT)
+        # self.master_address = ('localhost', MASTERNODE_SERVER_PORT)
         ###### FOR TEST ONLY ######
 
         ###### VARIABLES FROM MP1 ######
@@ -121,7 +119,7 @@ class DateNode:
         threading_electionReceiver.start()
 
         # create a DataNode Server, let it keep running
-        self.datanode_server = DataNodeServer.DataNodeServer(server_address= (self.address_ip, self.address_port+9))
+        self.datanode_server = DataNodeServer.DataNodeServer(server_address= (self.node_id, DATANODE_SERVER_PORT))
 
         self.thread_server  = threading.Thread(target= self.Maintain_server,
                                                  daemon= True)
@@ -657,7 +655,7 @@ class DateNode:
 
             try:
                 # create a client
-                peer_node_address = self.findNodeAddress(avail_node)
+                peer_node_address = self.get_peerserver_address(avail_node)
                 peer_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 peer_client.connect(peer_node_address)
 
@@ -723,7 +721,7 @@ def get_masterserver_address(self):
 
 def get_peerserver_address(self, peer_node_id):
     # need to return server's address
-    peerserver_address = (peer_node_id, DATANODE_PORT)
+    peerserver_address = (peer_node_id, DATANODE_SERVER_PORT)
     # peerserver_address = ('localhost', int(peer_node_id) + 9)
 
     return peerserver_address
