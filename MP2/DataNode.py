@@ -395,7 +395,7 @@ class DateNode:
 
             # Only working if is in the group
             self.isInGroup.wait()
-            print("checking")
+            # print("checking")
 
             # judge based on curr time
             curr_time = datetime.datetime.now()
@@ -514,7 +514,7 @@ class DateNode:
 
         masterCount = 0
         while self.stillAlive:
-            print("I'm listening")
+            # print("I'm listening")
             msg_data, Sender = sock.recvfrom(BUFFERSIZE)
 
             data = pickle.loads(msg_data)
