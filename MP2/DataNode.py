@@ -662,7 +662,7 @@ class DateNode:
         threading_electionReceiver.start()
 
         # create a DataNode Server, let it keep running
-        self.datanode_server = DataNodeServer.DataNodeServer(server_address= (self.node_id, DATANODE_SERVER_PORT))
+        self.datanode_server = DataNodeServer(server_address= (self.node_id, DATANODE_SERVER_PORT))
 
         self.thread_server = threading.Thread(target= self.Maintain_server,
                                                  daemon= True)
@@ -787,7 +787,7 @@ class DateNode:
             self.master_thread = None
 
     def create_master_and_run(self):
-        masternode_server = MasterServer.MasterServer(
+        masternode_server = MasterServer(
             server_address=(self.node_id, MASTERNODE_SERVER_PORT)
         )
         masternode_server.serve_forever()
