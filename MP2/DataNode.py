@@ -546,7 +546,10 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
             
     def UPDATE(self, file_list_json_str):
         try:
+            print("updating file_list")
+            global file_list
             file_list = json.loads(file_list_json_str)
+            print(file_list)
         except Exception as ex:
             print(ex)
             print("Update my file list failed!")
@@ -1294,9 +1297,8 @@ class DateNode:
         """
 
     def LS(self, sdfsfilename):
-
-        store_machines = file_list[sdfsfilename]
         print("======================")
+        store_machines = file_list[sdfsfilename]
         print("The store machines of " + sdfsfilename + " are:\n")
         for machine in store_machines:
             print(machine)
