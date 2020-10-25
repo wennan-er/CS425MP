@@ -430,7 +430,7 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
         # "PUT a.txt"
         elif splits[0] == "PUT":
             msg = "ACK"
-            self.request.send(msg)
+            self.request.send(msg.encode())
             self.PUT(splits[1])
 
 
@@ -1156,7 +1156,7 @@ class DateNode:
                         # wait for peer node response
                         
                         print("waiting for ACK")
-                        response = peer_client.recv(MAXSIZE)
+                        response = peer_client.recv(MAXSIZE).decode()
                         print("receive response: " + response)
                         if response == "ACK":
                             print("receive ACK")
