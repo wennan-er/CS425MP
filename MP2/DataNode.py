@@ -177,6 +177,10 @@ class DateNode:
                 elif keyboard_cmd[0] == "store":
                     self.STORE()
 
+                # "show membershipList"
+                elif keyboard_cmd[0] == "show":
+                    self.MyList.plot()
+
                 # # CMD: show MyNode_d
                 # if CMD == "show MyID":
                 #     print("My node_id is: " + self.node_id)
