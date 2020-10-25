@@ -94,7 +94,8 @@ file_list_version = 0
 
 # synchronize member_list and myList.list
 member_list = []
-
+# global variable for MembershipList
+membershipList
 isMaster = False
 
 # This function is defined as a global function because the MasterHandler and MasterServer will call this function both.
@@ -116,6 +117,9 @@ def broadcast_file_list():
                 print(ex)
                 continue
         print("{} update file list success!".format(alive_host))
+
+
+
 """
 备注：
 在datanode receive时，假设receive的string存在了msg变量中，获取file_list的操作：
@@ -621,7 +625,9 @@ class DateNode:
         # identity
         self.node_id = node_id
         local_hostname = node_id
-        self.MyList = MembershipList(id=self.node_id)
+        global membershipList
+        membershipList = MembershipList(id=self.node_id)
+        self.MyList = membershipList
         self.port = self.MyList.dic[node_id][0]
         self.intro = self.MyList.introducer_list
 
@@ -765,8 +771,12 @@ class DateNode:
                     self.STORE()
 
                 # "show membershipList"
+                # elif keyboard_cmd[0] == "show":
+                #     self.MyList.plot()
+
                 elif keyboard_cmd[0] == "show":
-                    self.MyList.plot()
+                    global membershipList
+                    membershipList.plot()
 
                 elif keyboard_cmd[0] == "master":
                     print("{} is the master".format(self.myList.Master))
