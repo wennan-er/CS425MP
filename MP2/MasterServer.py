@@ -201,6 +201,12 @@ class MasterHandler(socketserver.BaseRequestHandler):
         # No available node to write, this write operation is failed!
         writing_list.pop(filename)
         writing_file_mapper.pop(filename)
+
+
+        print("After assign, the list is:")
+        print(writing_list[filename])
+        
+
         return 'FAILED WRITE'
 
     def FIND(self, filename):

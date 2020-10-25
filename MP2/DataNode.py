@@ -240,7 +240,7 @@ class DateNode:
 
     def kill_old_master(self):
         if self.master_thread != None:
-            self.master_thread.thread.deamon()
+            self.master_thread.terminate()
             self.master_thread = None
 
     def create_master_and_run(self):
