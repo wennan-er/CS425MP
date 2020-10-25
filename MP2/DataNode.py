@@ -531,7 +531,11 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
             self.request.send(msg.encode())
             
     def UPDATE(self, file_list_json_str):
-        file_list = json.loads(file_list_json_str)
+        try:
+            file_list = json.loads(file_list_json_str)
+        except Exception as ex:
+            print(ex)
+            print("Update my file list failed!")
 
 # Similar to lib example
 class DataNodeServer(socketserver.TCPServer):
@@ -732,6 +736,16 @@ class DateNode:
                 # "store"
                 elif keyboard_cmd[0] == "store":
                     self.STORE()
+
+                # 'ml'
+                elif keyboard_cmd[0] == "ml":
+                    print(self.MyList)
+                elif keyboard_cmd[0] == "master":
+                    print("{} is the master".format(self.myList.master))
+                elif keyboard_cmd[0] == "ml":
+                    print("=================Member List==================")
+                    for key,value in self.MyList.list.items():
+                        print("Member ID: {}, Member status: {}", key, value[1])
 
                 # # CMD: show MyNode_d
                 # if CMD == "show MyID":
