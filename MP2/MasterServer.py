@@ -119,6 +119,7 @@ class MasterHandler(socketserver.BaseRequestHandler):
             reply = self.CONFIRM(confirm_node_name, filename)
         elif splits[0] == "SLEEP":
             time.sleep(7)
+            reply = "sleep 7 seconds!"
             
         elif data[:4] == "WUHU":
             # help to debug and see what is the file list on the server.
