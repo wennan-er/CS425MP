@@ -429,9 +429,10 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
 
         # "PUT a.txt"
         elif splits[0] == "PUT":
-            self.PUT(splits[1])
             msg = "ACK"
             self.request.send(msg)
+            self.PUT(splits[1])
+
 
         # "SEND a.txt node_id"
         elif splits[0] == "SEND":
