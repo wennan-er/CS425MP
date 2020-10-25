@@ -71,6 +71,9 @@ def findNodeAddress(node_id):
 
 """
 
+# The variable of self hostname, the same as DataNode.node_id
+local_hostname = ""
+
 #e.g.: {a.txt : ['fa20-cs425-g29-01.cs.illinois.edu','fa20-cs425-g29-02.cs.illinois.edu','fa20-cs425-g29-03.cs.illinois.edu','fa20-cs425-g29-04.cs.illinois.edu']}
 file_list = {}
 # two dimensional dict：e.g.: {a.txt : {{fa20-cs425-g29-10.cs.illinois.edu : 0}, {fa20-cs425-g29-09.cs.illinois.edu : 1}}}
@@ -92,21 +95,23 @@ member_list = ['fa20-cs425-g29-01.cs.illinois.edu',
 
 # This function is defined as a global function because the MasterHandler and MasterServer will call this function both.
 # It is not proper to write it in some fixed class.
-def UPDATE():
+def broadcast_file_list():
     # get the json string of file_list
     file_list_str = json.dump(file_list)
     for alive_host in member_list:
         # TODO: 这里需要改一下，判断这个alive的不是自己
-        message = "UPDATE\n{}".format(file_list_str)
-        if alive_host != "自己":
+        message = "UPDATE {}".format(file_list_str)
+        if alive_host != local_hostname:
             try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect((alive_host, datanode_server_port))
+                s.connect((alive_host, DATANODE_SERVER_PORT))
                 len_sent = s.send(message)
                 s.close()
             except Exception as ex:
                 print(type(ex))
                 print(ex)
+                continue
+        print("{} update file list success!".format(alive_host))
 """
 备注：
 在datanode receive时，假设receive的string存在了msg变量中，获取file_list的操作：
@@ -254,7 +259,7 @@ class MasterHandler(socketserver.BaseRequestHandler):
             file_list.pop(filename)
             global file_list_version
             file_list_version = file_list_version + 1
-            #UPDATE()
+            broadcast_file_list()
             reply = "PURGE SUCCESS"
         else:
             reply = "FILE NOT EXISTS OR NOT DELETABLE"
@@ -283,7 +288,7 @@ class MasterHandler(socketserver.BaseRequestHandler):
                 file_list[filename] = replica_list
                 global file_list_version
                 file_list_version = file_list_version + 1
-                #UPDATE()
+                broadcast_file_list()
                 writing_list.pop(filename)
                 writing_file_mapper.pop(filename)
                 return "WRITE 4 RELPLCAS"
@@ -373,7 +378,7 @@ class MasterServer(socketserver.TCPServer):
                                     value.append(host)
                                     global file_list_version
                                     file_list_version = file_list_version + 1
-                                    #UPDATE()
+                                    broadcast_file_list()
                                     print("Replica file {} of failed node {} success!".format(key, node_to_backup))
                                     s.close()
                                     break
@@ -426,9 +431,15 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
         elif splits[0] == "SEND":
             self.SEND(splits[1], splits[2])
 
+        # "UPDATE "
+        elif splits[0] == "UPDATE":
+            self.UPDATE(splits[1])
+        pass
 
 
-        # server handle "GFT sdfsfilename"
+
+
+    # server handle "GFT sdfsfilename"
     def GET(self, sdfsfilename):
 
         # "r" - read mode
@@ -519,8 +530,8 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
             msg = "FAIL_ACKUP " + sdfsfilename + target_DataNode
             self.request.send(msg.encode())
             
-    def UPDATE(self, ):
-        pass
+    def UPDATE(self, file_list_json_str):
+        file_list = json.loads(file_list_json_str)
 
 # Similar to lib example
 class DataNodeServer(socketserver.TCPServer):
@@ -578,6 +589,7 @@ class DateNode:
 
         # identity
         self.node_id = node_id
+        local_hostname = node_id
         self.MyList = MembershipList(id=self.node_id)
         self.port = self.MyList.dic[node_id][0]
         self.intro = self.MyList.introducer_list
