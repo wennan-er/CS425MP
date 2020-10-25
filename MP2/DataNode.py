@@ -85,13 +85,15 @@ writing_file_mapper = {}
 file_list_version = 0
 
 # This is a fake alive list, please replace it with proper real alive list in the following code.
-member_list = ['fa20-cs425-g29-01.cs.illinois.edu',
-        'fa20-cs425-g29-02.cs.illinois.edu',
-        'fa20-cs425-g29-03.cs.illinois.edu',
-        'fa20-cs425-g29-04.cs.illinois.edu',
-        'fa20-cs425-g29-05.cs.illinois.edu',
-        'fa20-cs425-g29-06.cs.illinois.edu']
+# member_list = ['fa20-cs425-g29-01.cs.illinois.edu',
+#         'fa20-cs425-g29-02.cs.illinois.edu',
+#         'fa20-cs425-g29-03.cs.illinois.edu',
+#         'fa20-cs425-g29-04.cs.illinois.edu',
+#         'fa20-cs425-g29-05.cs.illinois.edu',
+#         'fa20-cs425-g29-06.cs.illinois.edu']
 
+# synchronize member_list and myList.list
+member_list = []
 
 # This function is defined as a global function because the MasterHandler and MasterServer will call this function both.
 # It is not proper to write it in some fixed class.
@@ -777,7 +779,7 @@ class DateNode:
 
     def kill_old_master(self):
         if self.master_thread != None:
-            self.master_thread.terminate()
+            #self.master_thread.terminate()
             self.master_thread = None
 
     def create_master_and_run(self):
