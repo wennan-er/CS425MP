@@ -183,6 +183,8 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
             # backup failed, send an information to master
             msg = "FAIL_ACKUP " + sdfsfilename + target_DataNode
             self.request.send(msg.encode())
+            
+    def UPDATE(self, )
 
 # Similar to lib example
 class DataNodeServer(socketserver.TCPServer):
