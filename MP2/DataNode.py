@@ -245,7 +245,7 @@ class DateNode:
 
     def create_master_and_run(self):
         masternode_server = MasterServer.MasterServer(
-            server_address=(self.MyList.Master, MASTERNODE_SERVER_PORT)
+            server_address=(self.node_id, MASTERNODE_SERVER_PORT)
         )
         masternode_server.forver()
 
