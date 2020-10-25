@@ -235,7 +235,7 @@ class DateNode:
         self.datanode_server.serve_forever()
 
     def set_new_master(self):
-        self.master_thread = threading.Thread(target= self.create_master_and_run,)
+        self.master_thread = threading.Thread(target= self.create_master_and_run)
         self.master_thread.start()
 
     def kill_old_master(self):
@@ -430,8 +430,8 @@ class DateNode:
                 if len(self.MyList.list) == 1:
                     # fist time start master, create masterServer
                     # TODO: start new masterServer
-                    self.set_new_master()
                     self.MyList.Master = self.node_id
+                    self.set_new_master()
                 else:
                     # loop through all nodes in membershipList, ask for master information
                     for node in self.MyList.list.keys():
