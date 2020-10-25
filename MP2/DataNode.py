@@ -442,7 +442,9 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
         elif splits[0] == "UPDATE":
             print("recv an UPDATE from master")
             #print("content is :" splits[1])
-            self.UPDATE(splits[1])
+
+            file_list_json_str = ''.join(splits[1:])
+            self.UPDATE(file_list_json_str)
         pass
 
 
