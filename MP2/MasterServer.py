@@ -234,7 +234,9 @@ class MasterHandler(socketserver.BaseRequestHandler):
         print("confirm_node:"+confirm_node)
 
         if confirm_node not in writing_list[filename]:
-            print("expect: " + _ for _ in writing_list[filename])
+            print("expect:")
+            print(writing_list[filename])
+
             return "MISMATCH BETWEEN CONFIRM NODE AND FILENAME"
         else:
             writing_list[filename][confirm_node] = 1
