@@ -7,6 +7,7 @@ import time
 import logging
 from random import shuffle
 from collections import defaultdict
+import simplejson as json
 
 MAXSIZE = 1024
 
@@ -68,6 +69,31 @@ member_list = ['fa20-cs425-g29-01.cs.illinois.edu',
         'fa20-cs425-g29-08.cs.illinois.edu',
         'fa20-cs425-g29-09.cs.illinois.edu',
         'fa20-cs425-g29-10.cs.illinois.edu']
+
+# This function is defined as a global function because the MasterHandler and MasterServer will call this function both.
+# It is not proper to write it in some fixed class.
+def UPDATE():
+    # get the json string of file_list
+    file_list_str = json.dump(file_list)
+    for alive_host in member_list:
+        # TODO: 这里需要改一下，判断这个alive的不是自己
+        message = "UPDATE\n{}".format(file_list_str)
+        if alive_host != "自己":
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect((alive_host, datanode_server_port))
+                len_sent = s.send(message)
+                s.close()
+            except Exception as ex:
+                print(type(ex))
+                print(ex)
+"""
+备注：
+在datanode receive时，假设receive的string存在了msg变量中，获取file_list的操作：
+splits = msg.split('\n')
+new_file_list = json.loads(splits[1])
+这里,new_file_list就是一个新的file list了，类型是dict
+"""
 
 class MasterHandler(socketserver.BaseRequestHandler):
 
@@ -199,11 +225,12 @@ class MasterHandler(socketserver.BaseRequestHandler):
             file_list.pop(filename)
             global file_list_version
             file_list_version = file_list_version + 1
+            UPDATE()
             reply = "PURGE SUCCESS"
         else:
             reply = "FILE NOT EXISTS OR NOT DELETABLE"
         return reply
-
+                
     # Make this write replica success. If there are 4 success replicas already, move write it to the file list
     def CONFIRM(self, confirm_node, filename):
         if confirm_node not in writing_list[filename]:
@@ -221,6 +248,7 @@ class MasterHandler(socketserver.BaseRequestHandler):
                 file_list[filename] = replica_list
                 global file_list_version
                 file_list_version = file_list_version + 1
+                UPDATE()
                 writing_list.pop(filename)
                 writing_file_mapper.pop(filename)
                 return "WRITE 4 RELPLCAS"
@@ -310,6 +338,7 @@ class MasterServer(socketserver.TCPServer):
                                     value.append(host)
                                     global file_list_version
                                     file_list_version = file_list_version + 1
+                                    UPDATE()
                                     print("Replica file {} of failed node {} success!".format(key, node_to_backup))
                                     s.close()
                                     break
