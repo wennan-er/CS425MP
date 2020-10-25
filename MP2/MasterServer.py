@@ -64,11 +64,8 @@ member_list = ['fa20-cs425-g29-01.cs.illinois.edu',
         'fa20-cs425-g29-03.cs.illinois.edu',
         'fa20-cs425-g29-04.cs.illinois.edu',
         'fa20-cs425-g29-05.cs.illinois.edu',
-        'fa20-cs425-g29-06.cs.illinois.edu',
-        'fa20-cs425-g29-07.cs.illinois.edu',
-        'fa20-cs425-g29-08.cs.illinois.edu',
-        'fa20-cs425-g29-09.cs.illinois.edu',
-        'fa20-cs425-g29-10.cs.illinois.edu']
+        'fa20-cs425-g29-06.cs.illinois.edu']
+
 
 # This function is defined as a global function because the MasterHandler and MasterServer will call this function both.
 # It is not proper to write it in some fixed class.

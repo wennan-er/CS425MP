@@ -240,7 +240,7 @@ class DateNode:
 
     def kill_old_master(self):
         if self.master_thread != None:
-            self.master_thread.kill()
+            self.master_thread.thread.deamon()
             self.master_thread = None
 
     def create_master_and_run(self):
@@ -726,6 +726,35 @@ class DateNode:
             master_client.close()
         except:
             print("can't connect to master node")
+
+    """
+        'ls sdfsfilename'
+        List all machine address where this file is currently stored
+        """
+
+    def LS(self, sdfsfilename):
+
+        store_machines = self.file_list[sdfsfilename]
+        print("======================")
+        print("The store machines of " + sdfsfilename + " are:\n")
+        for machine in store_machines:
+            print(machine)
+        print("======================")
+
+    """
+    'store'
+    List all files currently being stored at this machine
+    """
+
+    def STORE(self):
+
+        print("======================")
+        print("The file(s) on this machine are:\n")
+        for sdfsfilename in self.file_list.keys():
+            if self.node_id in self.file_list[sdfsfilename]:
+                print(sdfsfilename)
+
+        print("======================")
 
     # a temp client talk to master
     def request_from_master(self, msg):
