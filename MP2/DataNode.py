@@ -1101,7 +1101,7 @@ class DateNode:
 
             elif data.msgType == "election":
                 masterCount += 1
-                if masterCount >= 1/2*len(self.MyList.list):
+                if masterCount == len(self.MyList.list)-1:
                     self.MyList.Master = self.node_id
                     # TODO: start new masterServer
                     self.set_new_master()
@@ -1109,6 +1109,7 @@ class DateNode:
                     for node in self.MyList.list.keys():
                         broadMsg = message("broadcast master", node, self.MyList.dic[node][1],self.node_id, self.MyList.dic[self.node_id][1], self.MyList.Master)
                         self.electionSenderQueue.put(broadMsg)
+                    masterCount = 0
 
 
 
