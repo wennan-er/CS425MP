@@ -602,7 +602,7 @@ class DateNode:
 
                         content = localfile.read(MAXSIZE)
                         while content:
-                                print("Send data:{}".format(content).encode())
+                                #print("Send data:{}".format(content).encode())
                                 peer_client.send(content)
                                 content = localfile.read(MAXSIZE)
 

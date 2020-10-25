@@ -124,7 +124,7 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
         # read from socket, write into sdfs
         content = self.request.recv(MAXSIZE)
         while content:
-            print("Receive data:{}".format(content.decode()))
+            #print("Receive data:{}".format(content.decode()))
 
             sdfsfile.write(content)
             content = self.request.recv(MAXSIZE)
