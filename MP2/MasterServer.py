@@ -195,7 +195,10 @@ class MasterHandler(socketserver.BaseRequestHandler):
         for member in member_list:
             if member not in writing_list[filename]:
                 writing_list[filename][member] = 0
-                #print(writing_list)
+
+
+
+                print(writing_list)
                 return member
         
         # No available node to write, this write operation is failed!
@@ -205,7 +208,7 @@ class MasterHandler(socketserver.BaseRequestHandler):
 
         print("After assign, the list is:")
         print(writing_list[filename])
-        
+
 
         return 'FAILED WRITE'
 
