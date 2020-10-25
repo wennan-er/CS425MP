@@ -596,48 +596,31 @@ class DateNode:
 
                     localfile = open(localfilename, "rb")
 
-                    # try:
-                    #
-                    #     print("connect peer node " + response + " start trans")
-                    #
-                    #     content = localfile.read(MAXSIZE)
-                    #     while content:
-                    #             print("Send data:{}".format(content).encode())
-                    #             peer_client.send(content)
-                    #             content = localfile.read(MAXSIZE)
-                    #
-                    #     localfile.close()
-                    #     peer_client.close()
-                    #
-                    #     print("a thread to "+ response +" finished SENDING JOB")
-                    #     last_failed = False
-                    #
-                    #     # confirm with master
-                    #     msg = "CONFIRM "+sdfsfilename + " " + response
-                    #     self.request_from_master(msg)
-                    #
-                    # except:
-                    #     print("peer node "+ response +" is failed")
-                    #     last_failed = True
-                    #     print("now repeating")
+                    try:
 
-                    print("connect peer node " + response + " start trans")
+                        print("connect peer node " + response + " start trans")
 
-                    content = localfile.read(MAXSIZE)
-                    while content:
-                        print("Send data:{}".format(content).encode())
-                        peer_client.send(content)
                         content = localfile.read(MAXSIZE)
+                        while content:
+                                print("Send data:{}".format(content).encode())
+                                peer_client.send(content)
+                                content = localfile.read(MAXSIZE)
 
-                    localfile.close()
-                    peer_client.close()
+                        localfile.close()
+                        peer_client.close()
 
-                    print("a thread to " + response + " finished SENDING JOB")
-                    last_failed = False
+                        print("a thread to "+ response +" finished SENDING JOB")
+                        last_failed = False
 
-                    # "CONFIRM [node_id] [filename]"
-                    msg = "CONFIRM " + response + " " + sdfsfilename + "\n"
-                    self.request_from_master(msg)
+                        # confirm with master
+                        msg = "CONFIRM "+sdfsfilename + " " + response
+                        self.request_from_master(msg)
+
+                    except:
+                        print("peer node "+ response +" is failed")
+                        last_failed = True
+                        print("now repeating")
+
 
 
 
@@ -709,6 +692,9 @@ class DateNode:
 
                 f.close()
                 peer_client.close()
+
+                print("already get" + sdfsfilename)
+                return
             except:
                 print("one peer node" + avail_node + "failed")
                 print("NOW loop for next")
