@@ -556,6 +556,7 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
         #     print(ex)
         #     print("Update my file list failed!")
         print("updating file_list")
+        print(file_list_json_str)
         global file_list
         file_list = json.loads(file_list_json_str)
         print(file_list)
