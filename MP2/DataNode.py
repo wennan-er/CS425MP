@@ -247,7 +247,7 @@ class DateNode:
         masternode_server = MasterServer.MasterServer(
             server_address=(self.node_id, MASTERNODE_SERVER_PORT)
         )
-        masternode_server.forver()
+        masternode_server.serve_forever()
 
         # Receiver is a server:
 
