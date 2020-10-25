@@ -168,10 +168,6 @@ class DateNode:
                     (ops, sdfsfilename) = keyboard_cmd
                     self.DELETE(sdfsfilename= sdfsfilename)
 
-
-                else:
-                    print("WRONG CMD, PLEASE RETRY")
-
                 # "ls sdfsfilename"
                 elif keyboard_cmd[0] == "ls":
                     (ops, sdfsfilename) = keyboard_cmd
@@ -212,6 +208,26 @@ class DateNode:
                         print("Gossip") if self.isGossip else print("ALL2ALL")
                     finally:
                         BroadcastModeLock.release()
+                        # CMD: KILL node_i
+
+                elif keyboard_cmd[0] == "KILL":
+                    self.stillAlive = False
+                    sys.exit()
+
+                # CMD: LEFT node_i
+                elif keyboard_cmd[0] == "LEFT":
+                    self.LeftAction()
+                    # set isInGroup to False
+                    self.isInGroup.clear()
+
+                # CMD: JOIN
+                elif keyboard_cmd[0] == "JOIN":
+                    self.JoinAction()
+                    # set isInGroup to True
+                    self.isInGroup.set()
+
+                else:
+                    print("WRONG CMD, PLEASE RETRY")
 
 
 
@@ -221,22 +237,7 @@ class DateNode:
                         JOIN
                 """
 
-                # # CMD: KILL node_i
-                # elif keyboard_cmd[0] == "KILL":
-                #     self.stillAlive = False
-                #     sys.exit()
-                #
-                # # CMD: LEFT node_i
-                # elif keyboard_cmd[0] == "LEFT":
-                #     self.LeftAction()
-                #     # set isInGroup to False
-                #     self.isInGroup.clear()
-                #
-                # # CMD: JOIN
-                # elif keyboard_cmd[0] == "JOIN":
-                #     self.JoinAction()
-                #     # set isInGroup to True
-                #     self.isInGroup.set()
+
 
 
 
