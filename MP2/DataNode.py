@@ -742,10 +742,10 @@ class DateNode:
                     print(self.MyList)
                 elif keyboard_cmd[0] == "master":
                     print("{} is the master".format(self.myList.master))
-                elif keyboard_cmd[0] == "ml":
-                    print("=================Member List==================")
-                    for key,value in self.MyList.list.items():
-                        print("Member ID: {}, Member status: {}", key, value[1])
+                # elif keyboard_cmd[0] == "ml":
+                #     print("=================Member List==================")
+                #     for key,value in self.MyList.list.items():
+                #         print("Member ID: {}, Member status: {}", key, value[1])
 
                 # # CMD: show MyNode_d
                 # if CMD == "show MyID":
