@@ -7,7 +7,7 @@ import time
 import logging
 from random import shuffle
 from collections import defaultdict
-import simplejson as json
+import json as json
 
 MAXSIZE = 1024
 
