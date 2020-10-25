@@ -1127,22 +1127,22 @@ class DateNode:
                 msg = "ASSIGN "+sdfsfilename
 
 
-                response = self.request_from_master(msg)
+                peer_node = self.request_from_master(msg)
 
 
                 # can't PUT right now
-                if response == "FILE IN USING":
-                    print(response)
+                if peer_node == "FILE IN USING":
+                    print(peer_node)
                     exit()
                 # no node available
-                elif response == "FAILED WRITE":
-                    print(response)
+                elif peer_node == "FAILED WRITE":
+                    print(peer_node)
                     exit()
 
                 else:
                     # START PEER TRANSFER
 
-                    peer_server_address = self.get_peerserver_address(response)
+                    peer_server_address = self.get_peerserver_address(peer_node)
                     print("peer_server_ip: "    + peer_server_address[0])
                     print("peer_server_port: "  + str(peer_server_address[1]))
                     try:
@@ -1170,7 +1170,7 @@ class DateNode:
 
                     try:
 
-                        print("connect peer node " + response + " start trans")
+                        print("connect peer node " + peer_node + " start trans")
 
                         content = localfile.read(MAXSIZE)
                         while content:
@@ -1181,15 +1181,15 @@ class DateNode:
                         localfile.close()
                         peer_client.close()
 
-                        print("a thread to "+ response +" finished SENDING JOB")
+                        print("a thread to "+ peer_node +" finished SENDING JOB")
                         last_failed = False
 
                         # confirm with master
-                        msg = "CONFIRM "+ response + " " + sdfsfilename
+                        msg = "CONFIRM "+ peer_node + " " + sdfsfilename
                         self.request_from_master(msg)
 
                     except:
-                        print("peer node "+ response +" is failed")
+                        print("peer node "+ peer_node +" is failed")
                         last_failed = True
                         print("now repeating")
 
