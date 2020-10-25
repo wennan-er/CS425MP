@@ -330,7 +330,7 @@ class Node:
 
     def checkMasterThread(self):
         # sleep for join MembershipList
-        time.sleep(8)
+        time.sleep(3)
         while self.stillAlive:
             # Only working if is in the group
             self.isInGroup.wait()
@@ -374,16 +374,19 @@ class Node:
 
             if self.MyList.Master != "None":
                 # when first enter or a new smaller node join in, they will change to smaller master node
-                # minMasterId = 11
-                # for node in self.MyList.list.keys():
-                #     curId = int(node.split('-')[3].split('.')[0])
-                #     minMasterId = min(minMasterId, curId)
-                #     if minMasterId == 10:
-                #         electNodeId = 'fa20-cs425-g29-10.cs.illinois.edu'
-                #     else:
-                #         electNodeId = 'fa20-cs425-g29-0' + str(minMasterId) + '.cs.illinois.edu'
-                # if self.MyList.Master != electNodeId:
-                #     self.MyList.Master = electNodeId
+                minMasterId = 11
+                for node in self.MyList.list.keys():
+                    curId = int(node.split('-')[3].split('.')[0])
+                    minMasterId = min(minMasterId, curId)
+                    if minMasterId == 10:
+                        electNodeId = 'fa20-cs425-g29-10.cs.illinois.edu'
+                    else:
+                        electNodeId = 'fa20-cs425-g29-0' + str(minMasterId) + '.cs.illinois.edu'
+                if self.MyList.Master != electNodeId:
+                    mesg = message("change", electNodeId, self.MyList.dic[electNodeId][1], self.node_id,
+                                   self.MyList.dic[self.node_id][1])
+                    self.electionSenderQueue.put(mesg)
+                    self.MyList.Master = electNodeId
                 print("current master is:", self.MyList.Master)
                 self.in_electionProgress = False
 
@@ -433,6 +436,12 @@ class Node:
 
             elif data.msgType == "broadcast master":
                 self.MyList.Master = data.msgData
+
+            elif data.msgType == "change":
+                if self.MyList.Master != self.node_id:
+                    # TODO: start new masterServer
+                    pass
+
 
             elif data.msgType == "election":
                 masterCount += 1

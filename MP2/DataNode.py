@@ -2,7 +2,7 @@ import threading
 import time
 import sys
 import DataNodeServer as DataNodeServer
-
+import MasterServer as MasterServer
 from MembershipList import MembershipList
 from WorkerThread import updateMembershipList
 import socket, pickle
@@ -45,6 +45,7 @@ class DateNode:
         self.in_electionProgress = False  # indicate in election progress
         self.electionSenderQueue = Queue()
         self.electionReceiverQueue = Queue()
+        self.master_thread = None
 
 
         # FOR TEST ('localhost', port)
@@ -126,6 +127,9 @@ class DateNode:
                                                  daemon= True)
         self.thread_server.start()
 
+        # create a MasterNode Server, when a new master come out, start this server
+        self.master_thread = None
+
 
 
         self.keyboard_listener = self.Keyboard_Listener(BroadcastModeLock= None, SenderQueue= None)
@@ -170,46 +174,46 @@ class DateNode:
                 else:
                     print("WRONG CMD, PLEASE RETRY")
 
-                # # "ls sdfsfilename"
-                # elif keyboard_cmd[0] == "ls":
-                #     (ops, sdfsfilename) = keyboard_cmd
-                #     self.LS(sdfsfilename = sdfsfilename)
-                #
-                # # "store"
-                # elif keyboard_cmd[0] == "store":
-                #     self.STORE()
+                # "ls sdfsfilename"
+                elif keyboard_cmd[0] == "ls":
+                    (ops, sdfsfilename) = keyboard_cmd
+                    self.LS(sdfsfilename = sdfsfilename)
 
-                # # CMD: show MyNode_d
-                # if CMD == "show MyID":
-                #     print("My node_id is: " + self.node_id)
-                #
-                # # CMD: show MyList
-                # elif CMD == "show MyList":
-                #     print(self.MyList)
-                #
-                # # CMD: switch broadcast mode to ALL2ALL
-                # elif CMD == "switch to ALL2ALL":
-                #     BroadcastModeLock.acquire()
-                #     try:
-                #         self.isGossip = False
-                #     finally:
-                #         BroadcastModeLock.release()
-                #
-                # # CMD: switch broadcast mode to GOSSIP
-                # elif CMD == "switch to GOSSIP":
-                #     BroadcastModeLock.acquire()
-                #     try:
-                #         self.isGossip = True
-                #     finally:
-                #         BroadcastModeLock.release()
-                #
-                # # CMD: show the current broadcast
-                # elif CMD == "show curr_mode":
-                #     BroadcastModeLock.acquire()
-                #     try:
-                #         print("Gossip") if self.isGossip else print("ALL2ALL")
-                #     finally:
-                #         BroadcastModeLock.release()
+                # "store"
+                elif keyboard_cmd[0] == "store":
+                    self.STORE()
+
+                # CMD: show MyNode_d
+                if CMD == "show MyID":
+                    print("My node_id is: " + self.node_id)
+
+                # CMD: show MyList
+                elif CMD == "show MyList":
+                    print(self.MyList)
+
+                # CMD: switch broadcast mode to ALL2ALL
+                elif CMD == "switch to ALL2ALL":
+                    BroadcastModeLock.acquire()
+                    try:
+                        self.isGossip = False
+                    finally:
+                        BroadcastModeLock.release()
+
+                # CMD: switch broadcast mode to GOSSIP
+                elif CMD == "switch to GOSSIP":
+                    BroadcastModeLock.acquire()
+                    try:
+                        self.isGossip = True
+                    finally:
+                        BroadcastModeLock.release()
+
+                # CMD: show the current broadcast
+                elif CMD == "show curr_mode":
+                    BroadcastModeLock.acquire()
+                    try:
+                        print("Gossip") if self.isGossip else print("ALL2ALL")
+                    finally:
+                        BroadcastModeLock.release()
 
 
 
@@ -242,6 +246,24 @@ class DateNode:
 
             except:
                 print("SOMETHING WRONG IN RUNNING THIS CMD")
+
+    def Maintain_server(self):
+        self.datanode_server.serve_forever()
+
+    def set_new_master(self):
+        self.master_thread = threading.Thread(target= self.create_master_and_run,)
+        self.master_thread.start()
+
+    def kill_old_master(self):
+        if self.master_thread != None:
+            self.master_thread.kill()
+            self.master_thread = None
+
+    def create_master_and_run(self):
+        masternode_server = MasterServer.MasterServer(
+            server_address=(self.MyList.Master, MASTERNODE_SERVER_PORT)
+        )
+        masternode_server.forver()
 
 
     def MyReceiverThread(self):
@@ -372,7 +394,10 @@ class DateNode:
             if self.MyList.Master == "None" and not self.in_electionProgress:
                 # first node enter the group, elect itself to be master
                 if len(self.MyList.list) == 1:
-                     self.MyList.Master = self.node_id
+                    # fist time start master, create masterServer
+                    # TODO: start new masterServer
+                    self.set_new_master()
+                    self.MyList.Master = self.node_id
                 else:
                     # loop through all nodes in membershipList, ask for master information
                     for node in self.MyList.list.keys():
@@ -401,8 +426,9 @@ class DateNode:
                 mesg = message("election", electNodeId, self.MyList.dic[electNodeId][1],self.node_id, self.MyList.dic[self.node_id][1])
                 self.electionSenderQueue.put(mesg)
 
-
+            # case3:
             if self.MyList.Master != "None":
+                # when first enter or a new smaller node join in, they will change to smaller master node
                 minMasterId = 11
                 for node in self.MyList.list.keys():
                     curId = int(node.split('-')[3].split('.')[0])
@@ -411,7 +437,15 @@ class DateNode:
                         electNodeId = 'fa20-cs425-g29-10.cs.illinois.edu'
                     else:
                         electNodeId = 'fa20-cs425-g29-0' + str(minMasterId) + '.cs.illinois.edu'
-                self.MyList.Master = electNodeId
+                if self.MyList.Master != electNodeId:
+                    # if prev master is self, now change to other, kill self's master server
+                    if self.MyList.Master == self.node_id:
+                        self.kill_old_master()
+                        #TODO: kill master
+                    mesg = message("change", electNodeId, self.MyList.dic[electNodeId][1], self.node_id,
+                                   self.MyList.dic[self.node_id][1])
+                    self.electionSenderQueue.put(mesg)
+                    self.MyList.Master = electNodeId
                 print("current master is:", self.MyList.Master)
                 self.in_electionProgress = False
 
@@ -462,18 +496,21 @@ class DateNode:
             elif data.msgType == "broadcast master":
                 self.MyList.Master = data.msgData
 
+            elif data.msgType == "change":
+                if self.MyList.Master != self.node_id:
+                    # TODO: start new masterServer
+                    self.set_new_master()
+
             elif data.msgType == "election":
                 masterCount += 1
                 if masterCount >= 1/2*len(self.MyList.list):
                     self.MyList.Master = self.node_id
+                    # TODO: start new masterServer
+                    self.set_new_master()
+                    self.setNewMaster = True
                     for node in self.MyList.list.keys():
                         broadMsg = message("broadcast master", node, self.MyList.dic[node][1],self.node_id, self.MyList.dic[self.node_id][1], self.MyList.Master)
                         self.electionSenderQueue.put(broadMsg)
-
-
-
-    def Maintain_server(self):
-        self.datanode_server.serve_forever()
 
 
 
@@ -672,25 +709,28 @@ class DateNode:
         return response
 
 
+# in real, this should wait for the master_address if there is no available one
+def get_masterserver_address(self):
+    # If no master, pass
+    if self.MyList.Master == "None":
+        pass
+    # return ('fa20-cs425-g29-01.cs.illinois.edu', 9999)
+    return (self.MyList.Master, MASTERNODE_SERVER_PORT)
 
 
-    # in real, this should wait for the master_address if there is no available one
-    def get_masterserver_address(self):
-        # If no master, pass
-        if self.MyList.Master == "None":
-            pass
-        # return ('fa20-cs425-g29-01.cs.illinois.edu', 9999)
-        return (self.MyList.Master, self.MyList.dic[self.MyList.Master][1])
+# in real, node_id is 'fa20-cs425-g29-01.cs.illinois.edu'
+# in test, node_id is the port '8080',
 
-    # in real, node_id is 'fa20-cs425-g29-01.cs.illinois.edu'
-    # in test, node_id is the port '8080',
+def get_peerserver_address(self, peer_node_id):
+    # need to return server's address
+    peerserver_address = (peer_node_id, DATANODE_PORT)
+    # peerserver_address = ('localhost', int(peer_node_id) + 9)
 
-    def get_peerserver_address(self, peer_node_id):
-        # need to return server's address
-        peerserver_address = (peer_node_id, self.MyList.dic[peer_node_id][1])
-        # peerserver_address = ('localhost', int(peer_node_id) + 9)
+    return peerserver_address
 
-        return peerserver_address
+
+
+
 
 
 
