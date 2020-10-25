@@ -95,6 +95,8 @@ file_list_version = 0
 # synchronize member_list and myList.list
 member_list = []
 
+isMaster = False
+
 # This function is defined as a global function because the MasterHandler and MasterServer will call this function both.
 # It is not proper to write it in some fixed class.
 def broadcast_file_list():
@@ -143,46 +145,46 @@ class MasterHandler(socketserver.BaseRequestHandler):
         from_host = socket.gethostbyaddr(self.client_address[0])[0]
         
         splits = data.split(' ')
+        if isMaster:
+            if splits[0] == "ASSIGN":
+                # return a node hostname if it's ok. e.g: "fa20-cs425-g29-08.cs.illinois.edu"
+                filename = splits[1]
+                # check write availability for this file
+                if not self.file_is_writable(filename, from_host):
+                    # tell the requesting node, this file is using right now.
+                    reply = "FILE IN USING"
+                else:
+                    # assign a new node to this request if there is a node available.
+                    reply = self.ASSIGN(filename)
+                    writing_file_mapper[filename] = from_host
 
-        if splits[0] == "ASSIGN":
-            # return a node hostname if it's ok. e.g: "fa20-cs425-g29-08.cs.illinois.edu"
-            filename = splits[1]
-            # check write availability for this file
-            if not self.file_is_writable(filename, from_host):
-                # tell the requesting node, this file is using right now.
-                reply = "FILE IN USING"
-            else:
-                # assign a new node to this request if there is a node available.
-                reply = self.ASSIGN(filename)
-                writing_file_mapper[filename] = from_host
-                
-        elif splits[0] == "FIND":
-            # return 4 replica hostnames, which are seperated by comma.e.g:"fa20-cs425-g29-07.cs.illinois.edu,fa20-cs425-g29-10.cs.illinois.edu,fa20-cs425-g29-03.cs.illinois.edu,fa20-cs425-g29-09.cs.illinois.edu"
-            filename = splits[1]
-            reply = self.FIND(filename)
-        
-        elif splits[0] == "PURGE":
-            # reply "PURGE SUCCESS" if delete is OK.
-            filename = splits[1]
-            reply = self.PURGE(filename)
-        
-        elif splits[0] == "CONFIRM":
-            confirm_node_name = splits[1]
-            filename = splits[2]
-            reply = self.CONFIRM(confirm_node_name, filename)
-        elif splits[0] == "SLEEP":
-            time.sleep(7)
-            reply = "sleep 7 seconds!"
-            
-        elif data[:4] == "WUHU":
-            # help to debug and see what is the file list on the server.
-            print(file_list)
-            print(writing_list)
-            print(writing_file_mapper)
-            print('File list version is{}'.format(file_list_version))
+            elif splits[0] == "FIND":
+                # return 4 replica hostnames, which are seperated by comma.e.g:"fa20-cs425-g29-07.cs.illinois.edu,fa20-cs425-g29-10.cs.illinois.edu,fa20-cs425-g29-03.cs.illinois.edu,fa20-cs425-g29-09.cs.illinois.edu"
+                filename = splits[1]
+                reply = self.FIND(filename)
+
+            elif splits[0] == "PURGE":
+                # reply "PURGE SUCCESS" if delete is OK.
+                filename = splits[1]
+                reply = self.PURGE(filename)
+
+            elif splits[0] == "CONFIRM":
+                confirm_node_name = splits[1]
+                filename = splits[2]
+                reply = self.CONFIRM(confirm_node_name, filename)
+            elif splits[0] == "SLEEP":
+                time.sleep(7)
+                reply = "sleep 7 seconds!"
+
+            elif data[:4] == "WUHU":
+                # help to debug and see what is the file list on the server.
+                print(file_list)
+                print(writing_list)
+                print(writing_file_mapper)
+                print('File list version is{}'.format(file_list_version))
         
         else:
-            reply = 'GET WRONG REQUEST!'
+            reply = 'I AM NOT THE MASTER!'
             
         #print("reply is -{}-".format(reply))
         
@@ -785,11 +787,15 @@ class DateNode:
     def set_new_master(self):
         self.master_thread = threading.Thread(target= self.create_master_and_run)
         self.master_thread.start()
+        global isMaster
+        isMaster = True
 
     def kill_old_master(self):
         if self.master_thread != None:
             #self.master_thread.terminate()
             self.master_thread = None
+        global isMaster
+        isMaster = False
 
     def create_master_and_run(self):
         masternode_server = MasterServer(
@@ -1096,7 +1102,7 @@ class DateNode:
                     self.MyList.Master = self.node_id
                     # TODO: start new masterServer
                     self.set_new_master()
-                    self.setNewMaster = True
+
                     for node in self.MyList.list.keys():
                         broadMsg = message("broadcast master", node, self.MyList.dic[node][1],self.node_id, self.MyList.dic[self.node_id][1], self.MyList.Master)
                         self.electionSenderQueue.put(broadMsg)
