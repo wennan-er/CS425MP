@@ -613,7 +613,7 @@ class DateNode:
                         last_failed = False
 
                         # confirm with master
-                        msg = "CONFIRM "+sdfsfilename + " " + response
+                        msg = "CONFIRM "+ response + " " + sdfsfilename
                         self.request_from_master(msg)
 
                     except:
