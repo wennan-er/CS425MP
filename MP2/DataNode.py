@@ -743,24 +743,24 @@ class DateNode:
         return response
 
 
-# in real, this should wait for the master_address if there is no available one
-def get_masterserver_address(self):
-    # If no master, pass
-    if self.MyList.Master == "None":
-        pass
-    # return ('fa20-cs425-g29-01.cs.illinois.edu', 9999)
-    return (self.MyList.Master, MASTERNODE_SERVER_PORT)
+    # in real, this should wait for the master_address if there is no available one
+    def get_masterserver_address(self):
+        # If no master, pass
+        if self.MyList.Master == "None":
+            pass
+        # return ('fa20-cs425-g29-01.cs.illinois.edu', 9999)
+        return (self.MyList.Master, MASTERNODE_SERVER_PORT)
 
 
-# in real, node_id is 'fa20-cs425-g29-01.cs.illinois.edu'
-# in test, node_id is the port '8080',
+    # in real, node_id is 'fa20-cs425-g29-01.cs.illinois.edu'
+    # in test, node_id is the port '8080',
 
-def get_peerserver_address(self, peer_node_id):
-    # need to return server's address
-    peerserver_address = (peer_node_id, DATANODE_SERVER_PORT)
-    # peerserver_address = ('localhost', int(peer_node_id) + 9)
+    def get_peerserver_address(self, peer_node_id):
+        # need to return server's address
+        peerserver_address = (peer_node_id, DATANODE_SERVER_PORT)
+        # peerserver_address = ('localhost', int(peer_node_id) + 9)
 
-    return peerserver_address
+        return peerserver_address
 
 
 
