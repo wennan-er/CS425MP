@@ -741,49 +741,8 @@ class DateNode:
                 elif keyboard_cmd[0] == "show":
                     self.MyList.plot()
 
-                # 'ml'
-                elif keyboard_cmd[0] == "ml":
-                    print(self.MyList)
                 elif keyboard_cmd[0] == "master":
-                    print("{} is the master".format(self.myList.master))
-                # elif keyboard_cmd[0] == "ml":
-                #     print("=================Member List==================")
-                #     for key,value in self.MyList.list.items():
-                #         print("Member ID: {}, Member status: {}", key, value[1])
-
-
-                # # CMD: show MyNode_d
-                # if CMD == "show MyID":
-                #     print("My node_id is: " + self.node_id)
-                #
-                # # CMD: show MyList
-                # elif CMD == "show MyList":
-                #     print(self.MyList)
-                #
-                # # CMD: switch broadcast mode to ALL2ALL
-                # elif CMD == "switch to ALL2ALL":
-                #     BroadcastModeLock.acquire()
-                #     try:
-                #         self.isGossip = False
-                #     finally:
-                #         BroadcastModeLock.release()
-                #
-                # # CMD: switch broadcast mode to GOSSIP
-                # elif CMD == "switch to GOSSIP":
-                #     BroadcastModeLock.acquire()
-                #     try:
-                #         self.isGossip = True
-                #     finally:
-                #         BroadcastModeLock.release()
-                #
-                # # CMD: show the current broadcast
-                # elif CMD == "show curr_mode":
-                #     BroadcastModeLock.acquire()
-                #     try:
-                #         print("Gossip") if self.isGossip else print("ALL2ALL")
-                #     finally:
-                #         BroadcastModeLock.release()
-                #         # CMD: KILL node_i
+                    print("{} is the master".format(self.myList.Master))
 
                 elif keyboard_cmd[0] == "KILL":
                     self.stillAlive = False
@@ -800,6 +759,9 @@ class DateNode:
                     self.JoinAction()
                     # set isInGroup to True
                     self.isInGroup.set()
+
+                elif keyboard_cmd[0] == "member":
+                    print(member_list)
 
                 else:
                     print("WRONG CMD, PLEASE RETRY")
@@ -988,6 +950,13 @@ class DateNode:
                     self.MyList.suspect(node_id)
 
             #self.MyList.plot()
+            # TODO: update membershipList wrt. global memberlist
+            #
+            tmp_list = []
+            for node_id in list(self.MyList.list.keys()):
+                tmp_list.append(node_id)
+            member_list = tmp_list
+
             time.sleep(self.sleepTime)
 
     def checkMasterThread(self):
