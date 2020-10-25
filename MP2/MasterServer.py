@@ -230,7 +230,11 @@ class MasterHandler(socketserver.BaseRequestHandler):
                 
     # Make this write replica success. If there are 4 success replicas already, move write it to the file list
     def CONFIRM(self, confirm_node, filename):
+
+        print("confirm_node:"+confirm_node)
+
         if confirm_node not in writing_list[filename]:
+            print("expect: " + _ for _ in writing_list[filename])
             return "MISMATCH BETWEEN CONFIRM NODE AND FILENAME"
         else:
             writing_list[filename][confirm_node] = 1
