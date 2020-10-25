@@ -103,13 +103,13 @@ def broadcast_file_list():
     # get the json string of file_list
     file_list_str = json.dumps(file_list)
     for alive_host in member_list:
-        # TODO: 这里需要改一下，判断这个alive的不是自己
+
         message = "UPDATE {}".format(file_list_str)
         if alive_host != local_hostname:
             try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((alive_host, DATANODE_SERVER_PORT))
-                len_sent = s.send(message)
+                len_sent = s.send(message.encode())
                 s.close()
             except Exception as ex:
                 print(type(ex))
