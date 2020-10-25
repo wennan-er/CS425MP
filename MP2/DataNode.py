@@ -736,8 +736,6 @@ def get_peerserver_address(self, peer_node_id):
 if __name__ == "__main__":
     node_id = "fa20-cs425-g29-" + sys.argv[1] + ".cs.illinois.edu"
     print(f"Node name is : {node_id}")
-    port = sys.argv[1]
 
-
-    datanode = DateNode("test")
+    datanode = DateNode(node_id)
 
