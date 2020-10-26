@@ -645,8 +645,8 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
         # if this node failed, let MasterNode decide the next action
     def SEND(self, sdfsfilename, target_DataNode):
 
-        peer_node_address = findNodeAddress(target_DataNode)
-
+        #peer_node_address = findNodeAddress(target_DataNode)
+        peer_node_address = self.get_peerserver_address(target_DataNode)
         sdfsfile = open(sdfsfilename, "rb")
 
         # a client communicate with peer node to transfer
@@ -717,7 +717,7 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
         # send a confirm information to master
         msg = "BACKUP " + sdfsfilename + target_DataNode
         self.request.send(msg.encode())
-        
+
     def UPDATE(self, file_list_json_str):
         # try:
         #     print("updating file_list")
