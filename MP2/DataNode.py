@@ -159,11 +159,11 @@ def backup_node(node_to_backup):
 
         # iterate from each owner
         for backup_sender in owners:
-            shuffle(member_list)
+            #shuffle(self.MyList)
 
             # backup_receiver is the target to store
             backup_receiver = None
-            for node in member_list:
+            for node in membershipList.list.keys():
                 # find a new node to store this file
                 if node not in owners:
                     backup_receiver = node
@@ -178,45 +178,78 @@ def backup_node(node_to_backup):
             print("BACKUP file {}, new_owner {}".format(file, backup_receiver))
             print(msg)
 
-            try:
-                # a client to peer node
-                peer_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                # sent to sender
-                peer_client.connect((backup_sender, DATANODE_SERVER_PORT))
-                peer_client.send(msg.encode())
+            # try:
+            #     # a client to peer node
+            #     peer_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            #     # sent to sender
+            #     peer_client.connect((backup_sender, DATANODE_SERVER_PORT))
+            #     peer_client.send(msg.encode())
+            #
+            #     # timeout as 10
+            #     peer_client.setblocking(0)
+            #     ready = select.select([peer_client], [], [], 10)
+            #
+            #     if ready[0]:
+            #         # receive response
+            #         response = peer_client.recv(MAXSIZE).decode()
+            #         print("in backup, master receive from sender node:" + response)
+            #         response = response.split(' ')
+            #         if response[0] == "BACKUP":
+            #             # add this newowner
+            #             print("add {} into owner of {}".format(backup_receiver, file))
+            #             file_list[file].append(backup_sender)
+            #
+            #             # inc and broadrcast file list
+            #             global file_list_version
+            #             file_list_version = file_list_version + 1
+            #             broadcast_file_list()
+            #
+            #             print("Replica file {} of failed node {} success!".format(file , node_to_backup))
+            #             peer_client.close()
+            #             return
+            #
+            #         else:
+            #             # This replica operation failed, just go to the next replica datanode.
+            #             peer_client.close()
+            #             continue
+            #     else:
+            #         peer_client.close()
+            # except Exception as ex:
+            #     print(type(ex))
+            #     print(ex)
+            # a client to peer node
+            peer_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # sent to sender
+            peer_client.connect((backup_sender, DATANODE_SERVER_PORT))
+            peer_client.send(msg.encode())
 
-                # timeout as 10
-                peer_client.setblocking(0)
-                ready = select.select([peer_client], [], [], 10)
+            # timeout as 10
+            peer_client.setblocking(0)
+            ready = select.select([peer_client], [], [], 10)
 
-                if ready[0]:
-                    # receive response
-                    response = peer_client.recv(MAXSIZE).decode()
-                    print("in backup, master receive from sender node:" + response)
-                    response = response.split(' ')
-                    if response[0] == "BACKUP":
-                        # add this newowner
-                        print("add {} into owner of {}".format(backup_receiver, file))
-                        file_list[file].append(backup_receiver)
+            if ready[0]:
+                # receive response
+                response = peer_client.recv(MAXSIZE).decode()
+                print("in backup, master receive from sender node:" + response)
+                response = response.split(' ')
+                if response[0] == "BACKUP":
+                    # add this newowner
+                    print("add {} into owner of {}".format(backup_receiver, file))
+                    file_list[file].append(backup_sender)
 
-                        # inc and broadrcast file list
-                        global file_list_version
-                        file_list_version = file_list_version + 1
-                        broadcast_file_list()
+                    # inc and broadrcast file list
+                    global file_list_version
+                    file_list_version = file_list_version + 1
+                    broadcast_file_list()
 
-                        print("Replica file {} of failed node {} success!".format(file , node_to_backup))
-                        peer_client.close()
-                        return
-
-                    else:
-                        # This replica operation failed, just go to the next replica datanode.
-                        peer_client.close()
-                        continue
-                else:
+                    print("Replica file {} of failed node {} success!".format(file, node_to_backup))
                     peer_client.close()
-            except Exception as ex:
-                print(type(ex))
-                print(ex)
+                    return
+
+                else:
+                    # This replica operation failed, just go to the next replica datanode.
+                    peer_client.close()
+                    continue
 
     print("Replica file {} of failed node {} failed!".format(file, node_to_backup))
 
@@ -617,43 +650,74 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
         sdfsfile = open(sdfsfilename, "rb")
 
         # a client communicate with peer node to transfer
-        try:
-            # ++++++ a peer client to target_Datanode   ++++++
-            peer_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            peer_client.connect(peer_node_address)
+        # try:
+        #     # ++++++ a peer client to target_Datanode   ++++++
+        #     peer_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #     peer_client.connect(peer_node_address)
+        #
+        #     # send "PUT a.txt" to peer_client
+        #     msg = "PUT " + sdfsfilename
+        #     peer_client.send(msg.encode())
+        #
+        #     # wait for peer node response
+        #     response = peer_client.recv(MAXSIZE).decode()
+        #     print("response is ",response)
+        #     if response == "ACK":
+        #         pass
+        #     else:
+        #         print("peer node not ACK")
+        #
+        #     content = sdfsfile.read(MAXSIZE)
+        #     while content:
+        #         peer_client.send(content)
+        #         content = sdfsfile.read(MAXSIZE)
+        #
+        #     sdfsfile.close()
+        #     peer_client.close()
+        #
+        #     print("a thread to " + peer_node_address + "finished SENDING JOB")
+        #     # ++++++        already back up             ++++++
+        #
+        #     # send a confirm information to master
+        #     msg = "BACKUP " + sdfsfilename + target_DataNode
+        #     self.request.send(msg.encode())
 
-            # send "PUT a.txt" to peer_client
-            msg = "PUT " + sdfsfilename
-            peer_client.send(msg.encode())
+        # except:
+        #     # backup failed, send an information to master
+        #     msg = "FAIL_ACKUP " + sdfsfilename + target_DataNode
+        #     self.request.send(msg.encode())
+        #
+        # ++++++ a peer client to target_Datanode   ++++++
+        peer_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        peer_client.connect(peer_node_address)
 
-            # wait for peer node response
-            response = peer_client.recv(MAXSIZE).decode()
-            print("response is ",response)
-            if response == "ACK":
-                pass
-            else:
-                print("peer node not ACK")
+        # send "PUT a.txt" to peer_client
+        msg = "PUT " + sdfsfilename
+        peer_client.send(msg.encode())
 
+        # wait for peer node response
+        response = peer_client.recv(MAXSIZE).decode()
+        print("response is ", response)
+        if response == "ACK":
+            pass
+        else:
+            print("peer node not ACK")
+
+        content = sdfsfile.read(MAXSIZE)
+        while content:
+            peer_client.send(content)
             content = sdfsfile.read(MAXSIZE)
-            while content:
-                peer_client.send(content)
-                content = sdfsfile.read(MAXSIZE)
 
-            sdfsfile.close()
-            peer_client.close()
+        sdfsfile.close()
+        peer_client.close()
 
-            print("a thread to " + peer_node_address + "finished SENDING JOB")
-            # ++++++        already back up             ++++++
+        print("a thread to " + peer_node_address + "finished SENDING JOB")
+        # ++++++        already back up             ++++++
 
-            # send a confirm information to master
-            msg = "BACKUP " + sdfsfilename + target_DataNode
-            self.request.send(msg.encode())
-
-        except:
-            # backup failed, send an information to master
-            msg = "FAIL_ACKUP " + sdfsfilename + target_DataNode
-            self.request.send(msg.encode())
-            
+        # send a confirm information to master
+        msg = "BACKUP " + sdfsfilename + target_DataNode
+        self.request.send(msg.encode())
+        
     def UPDATE(self, file_list_json_str):
         # try:
         #     print("updating file_list")
