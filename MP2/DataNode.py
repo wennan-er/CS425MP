@@ -119,6 +119,86 @@ def broadcast_file_list():
         print("{} update file list success!".format(alive_host))
 
 
+def backup_node(node_to_backup):
+    # e.g.: node_to_backup = 'fa20-cs425-g29-06.cs.illinois.edu'
+    # 遍历所有文件，找到该node上存的文件，向其他三个node依次发出"REPLICA a.txt target_node"的消息；
+    # 等待10s，socket断掉或者replica失败。成功会返回一个"CONFIRM_REPLICA a.txt"的消息;失败会返回"FAILED_REPLICA a.txt"；
+    # 如果该文件其余三个node也都备份失败，那么本次replica这个文件失败，print出来。然后继续备份下面的文件
+    print("Start to backup node: " + node_to_backup)
+
+    files_need_back_up = [file in file_list.key() if (node_to_backup in file_list[file])]
+    print(node_to_backup + " failed. Backup: " + files_need_back_up)
+
+    # remove the failed/left node
+    for file in files_need_back_up:
+        file_list[file].remove(node_to_backup)
+
+    # back up
+    for file in files_need_back_up:
+        owners = files_need_back_up[file]
+
+        success = False
+
+        # iterate from each owner
+        for owner in owners:
+            shuffle(member_list)
+
+            # new_owner is the target to store
+            new_owner = None
+            for node in member_list:
+                # find a new node to store this file
+                if node not in owners:
+                    new_owner = node
+                    break
+            if new_owner is None:
+                print("Not enough nodes, failed to backup")
+                return
+
+            # create 'SEND filename node'
+            msg = "SEND {} {}".format(file, new_owner)
+            print(msg)
+
+            try:
+                # a client to peer node
+                peer_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                peer_client.connect((owner, DATANODE_SERVER_PORT))
+                peer_client.send(msg.encode())
+
+                # timeout as 10
+                peer_client.setblocking(0)
+                ready = select.select([peer_client], [], [], 10)
+
+                if ready[0]:
+                    # receive response
+                    response = peer_client.recv(MAXSIZE).decode()
+                    print("in backup, master receive from peer_node:" + response)
+                    response = response.splits(' ')
+                    if response[0] == "BACKUP":
+                        # add this newowner
+                        print("add {} into owner of {}".format(new_owner, file))
+                        file_list[file].append(new_owner)
+
+                        # inc and broadrcast file list
+                        global file_list_version
+                        file_list_version = file_list_version + 1
+                        broadcast_file_list()
+
+                        print("Replica file {} of failed node {} success!".format(key, node_to_backup))
+                        peer_client.close()
+                        return
+
+                    else:
+                        # This replica operation failed, just go to the next replica datanode.
+                        peer_client.close()
+                        continue
+                else:
+                    peer_client.close()
+            except Exception as ex:
+                print(type(ex))
+                print(ex)
+
+    print("Replica file {} of failed node {} failed!".format(key, node_to_backup))
+
 
 """
 备注：
@@ -351,56 +431,136 @@ class MasterServer(socketserver.TCPServer):
     def close_request(self, request_address):
         #self.logger.debug('close_request(%s)', request_address)
         return socketserver.TCPServer.close_request(self, request_address)
-    
+
     def backup_node(self, node_to_backup):
         # e.g.: node_to_backup = 'fa20-cs425-g29-06.cs.illinois.edu'
         # 遍历所有文件，找到该node上存的文件，向其他三个node依次发出"REPLICA a.txt target_node"的消息；
         # 等待10s，socket断掉或者replica失败。成功会返回一个"CONFIRM_REPLICA a.txt"的消息;失败会返回"FAILED_REPLICA a.txt"；
         # 如果该文件其余三个node也都备份失败，那么本次replica这个文件失败，print出来。然后继续备份下面的文件
         print("Start to backup node: " + node_to_backup)
-        for key,value in file_list.items():
-            if node_to_backup in value:
-                #delete it from file table first
-                value.remove(node_to_backup)
-                
-                # This key should be backup
-                success = False
-                for host in value:
-                    if host != node_to_backup and host in member_list:
-                        # this host has a replica and it is alive
-                        message = "SEND {} {}".format(key, host)
-                        try:
-                            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                            s.connect((host, DATANODE_SERVER_PORT))
-                            len_sent = s.send(message)
-                            
-                            # Set timeout as 10
-                            s.setblocking(0)
-                            ready = select.select([s], [], [], 10)
-                            if ready[0]:
-                                # receive response
-                                response = s.recv(1024)
-                                splits = response.split(' ')
-                                if splits[0] == "BACKUP":
-                                    success = True
-                                    value.append(host)
-                                    global file_list_version
-                                    file_list_version = file_list_version + 1
-                                    broadcast_file_list()
-                                    print("Replica file {} of failed node {} success!".format(key, node_to_backup))
-                                    s.close()
-                                    break
-                                else:
-                                    # This replica operation failed, just go to the next replica datanode.
-                                    s.close()
-                                    continue
-                            s.close()
-                        except Exception as ex:
-                            print(type(ex))
-                            print(ex)
-                if not success:
-                    print("Replica file {} of failed node {} failed!".format(key, node_to_backup))
-        return
+
+        files_need_back_up = [file in file_list.key() if (node_to_backup in file_list[file])]
+        print(node_to_backup + " failed. Backup: " + files_need_back_up)
+
+        # remove the failed/left node
+        for file in files_need_back_up:
+            file_list[file].remove(node_to_backup)
+
+        # back up
+        for file in files_need_back_up:
+            owners = files_need_back_up[file]
+
+            success = False
+
+            # iterate from each owner
+            for owner in owners:
+                shuffle(member_list)
+
+                # new_owner is the target to store
+                new_owner = None
+                for node in memberlist:
+                    # find a new node to store this file
+                    if node not in owners:
+                        new_owner = node
+                        break;
+                if new_owner is None:
+                    print("Not enough nodes, failed to backup")
+                    return
+
+                # create 'SEND filename node'
+                msg = "SEND {} {}".format(file, new_owner)
+                print(msg)
+
+                try:
+                    # a cclient to peer node
+                    peer_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    peer_client.connect((owner, DATANODE_SERVER_PORT))
+                    peer_client.send(msg.encode())
+
+                    # timeout as 10
+                    peer_client.setblocking(0)
+                    ready = select.select([peer_client], [], [], 10)
+
+                    if ready[0]:
+                        # receive response
+                        response = peer_client.recv(MAXSIZE).decode()
+                        print("in backup, master receive from peer_node:" + response)
+                        response = response.splits(' ')
+                        if response[0] == "BACKUP":
+                            # add this newowner
+                            print("add {} into owner of {}".format(new_owner, file))
+                            file_list[file].append(new_owner)
+
+                            # inc and broadrcast file list
+                            global file_list_version
+                            file_list_version = file_list_version + 1
+                            broadcast_file_list()
+
+                            print("Replica file {} of failed node {} success!".format(key, node_to_backup))
+                            peer_client.close()
+                            return
+
+                        else:
+                            # This replica operation failed, just go to the next replica datanode.
+                            peer_client.close()
+                            continue
+                    else:
+                        peer_client.close()
+                except Exception as ex:
+                    print(type(ex))
+                    print(ex)
+
+        print("Replica file {} of failed node {} failed!".format(key, node_to_backup))
+    
+    # def backup_node(self, node_to_backup):
+    #     # e.g.: node_to_backup = 'fa20-cs425-g29-06.cs.illinois.edu'
+    #     # 遍历所有文件，找到该node上存的文件，向其他三个node依次发出"REPLICA a.txt target_node"的消息；
+    #     # 等待10s，socket断掉或者replica失败。成功会返回一个"CONFIRM_REPLICA a.txt"的消息;失败会返回"FAILED_REPLICA a.txt"；
+    #     # 如果该文件其余三个node也都备份失败，那么本次replica这个文件失败，print出来。然后继续备份下面的文件
+    #     print("Start to backup node: " + node_to_backup)
+    #     for key,value in file_list.items():
+    #         if node_to_backup in value:
+    #             #delete it from file table first
+    #             value.remove(node_to_backup)
+    #
+    #             # This key should be backup
+    #             success = False
+    #             for host in value:
+    #                 if host != node_to_backup and host in member_list:
+    #                     # this host has a replica and it is alive
+    #                     message = "SEND {} {}".format(key, host)
+    #                     try:
+    #                         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #                         s.connect((host, DATANODE_SERVER_PORT))
+    #                         len_sent = s.send(message)
+    #
+    #                         # Set timeout as 10
+    #                         s.setblocking(0)
+    #                         ready = select.select([s], [], [], 10)
+    #                         if ready[0]:
+    #                             # receive response
+    #                             response = s.recv(1024)
+    #                             splits = response.split(' ')
+    #                             if splits[0] == "BACKUP":
+    #                                 success = True
+    #                                 value.append(host)
+    #                                 global file_list_version
+    #                                 file_list_version = file_list_version + 1
+    #                                 broadcast_file_list()
+    #                                 print("Replica file {} of failed node {} success!".format(key, node_to_backup))
+    #                                 s.close()
+    #                                 break
+    #                             else:
+    #                                 # This replica operation failed, just go to the next replica datanode.
+    #                                 s.close()
+    #                                 continue
+    #                         s.close()
+    #                     except Exception as ex:
+    #                         print(type(ex))
+    #                         print(ex)
+    #             if not success:
+    #                 print("Replica file {} of failed node {} failed!".format(key, node_to_backup))
+    #     return
 
 #------- Below is DataNode
 
@@ -986,14 +1146,13 @@ class DateNode:
                 # changed from FAIL to REMOVE
                 if pasted > t_failed and statues in {"ACTIVE", "JOIN", "SUSPECT"}:
                     self.MyList.remove(node_id)
+                    # TODO: call master backup_node function
 
                 # if already FAIL or SUSPECT or LEFT, do nothing
                 elif pasted > t_suspect and statues in {"ACTIVE", "JOIN"}:
                     self.MyList.suspect(node_id)
 
-            #self.MyList.plot()
-            # TODO: update membershipList wrt. global memberlist
-            #
+            # update membershipList wrt. global memberlist
             tmp_list = []
             global member_list
             for node_id in list(self.MyList.list.keys()):

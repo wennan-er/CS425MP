@@ -78,6 +78,7 @@ class MembershipList:
 
 
 
+
     """
     Plot the current MyList to terminal
     """
