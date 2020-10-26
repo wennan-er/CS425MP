@@ -130,7 +130,7 @@ def backup_node(node_to_backup):
     files_need_back_up = dict()
     for key, value in file_list.items():
         if node_to_backup in value:
-            peer_node = [v in value if v != files_need_back_up]
+            peer_node = list(filter(lambda x: x != node_to_backup, value))
             files_need_back_up[key] = peer_node
 
     print(node_to_backup + " failed. Backup: ")
