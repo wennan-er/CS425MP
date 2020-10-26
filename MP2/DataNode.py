@@ -126,7 +126,7 @@ def backup_node(node_to_backup):
     # 如果该文件其余三个node也都备份失败，那么本次replica这个文件失败，print出来。然后继续备份下面的文件
     print("Start to backup node: " + node_to_backup)
 
-    files_need_back_up = [file in file_list.key() if (node_to_backup in file_list[file])]
+    files_need_back_up = [file in file_list.keys() if (node_to_backup in file_list[file])]
     print(node_to_backup + " failed. Backup: " + files_need_back_up)
 
     # remove the failed/left node
