@@ -36,29 +36,8 @@ MP2 file ops
 
 
 TODO:
-	DataNodeServer: Receive FileList
-				
-			(start from handle) 
-			May need access to self.file_list in DataNode (Finished)
-			
-	DataNode:	///0. kill_old_master -> how to kill a thread (wennan doing)
-			///	line:243 terminate
-			///	(May Ignore)
-			
-			
-			1. If original PUT/GET doesn't work, feel free to use scp
-			
-			2. BACKUP related function need test
-			
-
-	MasterNode: 	0. Alive-Node List exists in self.membershipList of DataNode (wennan doing)
-			(but a real alive membershipList may not be necessary, since DataNode should request for reassign)
-			
-			1. Where to detect failure node
-				a. MyCheckerThread -> ctrl-F "changed from FAIL to REMOVE"
-				b. membershipList.remove()
-				c. membershipList.left()
-				May need an event/access to MasterServer
+	
+	Connection refuse
 			
 	Log for file ops(in DataNod/MasterServer I guess?)
 			
