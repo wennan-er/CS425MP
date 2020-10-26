@@ -130,7 +130,8 @@ def backup_node(node_to_backup):
         if node_to_backup in value:
             files_need_back_up.append(key)
 
-    print(node_to_backup + " failed. Backup: " + files_need_back_up)
+    print(node_to_backup + " failed. Backup: ")
+    print(files_need_back_up)
 
     # remove the failed/left node
     for file in files_need_back_up:
