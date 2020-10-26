@@ -26,6 +26,9 @@ MAXSIZE = 1024
 DATANODE_PORT           = 8080          # not use yet
 DATANODE_SERVER_PORT    = 8089          # for DataNode Server
 MASTERNODE_SERVER_PORT  = 8099          # If I'm master
+PUTstart = 0
+GETstart = 0
+
 """
     TEST MODE:
         node_id -> ('localhost', node_id)
@@ -366,6 +369,8 @@ class MasterHandler(socketserver.BaseRequestHandler):
             if member not in writing_list[filename]:
                 writing_list[filename][member] = 0
                 # TODO:starttime
+                global PUTstart
+                PUTstart = datetime.datetime.now()
                 print("The start time of assigning",datetime.datetime.now())
                 return member
         
@@ -425,6 +430,9 @@ class MasterHandler(socketserver.BaseRequestHandler):
                     replica_list.append(key)
             if cnt >= 4:
                 # TODO: endtime
+                print("--------------------------------------------------")
+                print("time last is",datetime.datetime.now()-PUTstart)
+                print("--------------------------------------------------")
                 print("The end time of assigning",datetime.datetime.now())
                 # Write process OK!
                 file_list[filename] = replica_list
