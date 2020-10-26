@@ -125,20 +125,23 @@ def backup_node(node_to_backup):
     # 等待10s，socket断掉或者replica失败。成功会返回一个"CONFIRM_REPLICA a.txt"的消息;失败会返回"FAILED_REPLICA a.txt"；
     # 如果该文件其余三个node也都备份失败，那么本次replica这个文件失败，print出来。然后继续备份下面的文件
     print("Start to backup node: " + node_to_backup)
-    files_need_back_up = []
+
+    # files_need_back_up = {file1:[node1,node2,node3]}
+    files_need_back_up = dict()
     for key, value in file_list.items():
         if node_to_backup in value:
-            files_need_back_up.append(key)
+            peer_node = [v in value if v != files_need_back_up]
+            files_need_back_up[key] = peer_node
 
     print(node_to_backup + " failed. Backup: ")
     print(files_need_back_up)
 
     # remove the failed/left node
-    for file in files_need_back_up:
+    for file in files_need_back_up.keys():
         file_list[file].remove(node_to_backup)
 
     # back up
-    for file in files_need_back_up:
+    for file in files_need_back_up.keys():
         owners = files_need_back_up[file]
 
         success = False
