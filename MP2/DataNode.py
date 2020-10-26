@@ -1410,6 +1410,8 @@ class DateNode:
             f.close()
 
     def GET(self, localfilename, sdfsfilename):
+        # TODO: start get time
+        print("The start time of getting", datetime.datetime.now())
         try:
             # a client only connect to master
             master_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -1459,6 +1461,8 @@ class DateNode:
                 peer_client.close()
 
                 print("already get" + sdfsfilename)
+                # TODO: end get
+                print("The end time of getting", datetime.datetime.now())
                 return
             except:
                 print("one peer node" + avail_node + "failed")
