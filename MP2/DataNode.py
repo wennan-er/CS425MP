@@ -96,7 +96,7 @@ file_list_version = 0
 #         'fa20-cs425-g29-06.cs.illinois.edu']
 
 # synchronize member_list and myList.list
-member_list = []
+# member_list = []
 # global variable for MembershipList
 membershipList = MembershipList(id=0)
 isMaster = False
@@ -106,7 +106,7 @@ isMaster = False
 def broadcast_file_list():
     # get the json string of file_list
     file_list_str = json.dumps(file_list)
-    for alive_host in member_list:
+    for alive_host in membershipList.list:
 
         message = "UPDATE {}".format(file_list_str)
         if alive_host != local_hostname:
@@ -120,6 +120,13 @@ def broadcast_file_list():
                 print(ex)
                 continue
         print("{} update file list success!".format(alive_host))
+
+def continue_broadcast():
+    while True:
+        if not isMaster:
+            return
+        broadcast_file_list()
+        time.sleep(2)
 
 
 def backup_node(node_to_backup):
@@ -364,8 +371,8 @@ class MasterHandler(socketserver.BaseRequestHandler):
     # If there is no available node, return a error message!
     # 0 - is writing. 1 - success, 2 - failed
     def ASSIGN(self, filename):
-        shuffle(member_list)
-        for member in member_list:
+        # shuffle(member_list)
+        for member in membershipList.list:
             if member not in writing_list[filename]:
                 writing_list[filename][member] = 0
                 # TODO:starttime
@@ -735,11 +742,11 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
         # except Exception as ex:
         #     print(ex)
         #     print("Update my file list failed!")
-        print("updating file_list")
-        print(file_list_json_str)
+        # print("updating file_list")
+        # print(file_list_json_str)
         global file_list
         file_list = json.loads(file_list_json_str)
-        print(file_list)
+        # print(file_list)
         print("finish updating need reverse")
 
 # Similar to lib example
@@ -798,6 +805,7 @@ class DateNode:
 
         # identity
         self.node_id = node_id
+        global local_hostname
         local_hostname = node_id
         global membershipList
         membershipList = MembershipList(id=self.node_id)
@@ -972,7 +980,7 @@ class DateNode:
                     self.isInGroup.set()
 
                 elif keyboard_cmd[0] == "member":
-                    print(member_list)
+                    print(membershipList.list)
 
                 else:
                     print("WRONG CMD, PLEASE RETRY")
@@ -988,6 +996,10 @@ class DateNode:
         print("start master")
         global isMaster
         isMaster = True
+
+        thread_continue_broadcast = threading.Thread(target= continue_broadcast)
+        thread_continue_broadcast.start()
+
 
     def kill_old_master(self):
         if self.master_thread != None:
@@ -1168,12 +1180,7 @@ class DateNode:
                 elif pasted > t_suspect and statues in {"ACTIVE", "JOIN"}:
                     self.MyList.suspect(node_id)
 
-            # update membershipList wrt. global memberlist
-            tmp_list = []
-            global member_list
-            for node_id in list(self.MyList.list.keys()):
-                tmp_list.append(node_id)
-            member_list = tmp_list
+
             time.sleep(self.sleepTime)
 
     def checkMasterThread(self):
