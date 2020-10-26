@@ -365,10 +365,8 @@ class MasterHandler(socketserver.BaseRequestHandler):
         for member in member_list:
             if member not in writing_list[filename]:
                 writing_list[filename][member] = 0
-
-
-
-                print(writing_list)
+                # TODO:starttime
+                print("The start time of assigning",datetime.datetime.now())
                 return member
         
         # No available node to write, this write operation is failed!
@@ -426,6 +424,8 @@ class MasterHandler(socketserver.BaseRequestHandler):
                     cnt += value
                     replica_list.append(key)
             if cnt >= 4:
+                # TODO: endtime
+                print("The end time of assigning",datetime.datetime.now())
                 # Write process OK!
                 file_list[filename] = replica_list
                 global file_list_version
