@@ -434,7 +434,7 @@ class MasterServer(socketserver.TCPServer):
     def close_request(self, request_address):
         #self.logger.debug('close_request(%s)', request_address)
         return socketserver.TCPServer.close_request(self, request_address)
-    
+
     # def backup_node(self, node_to_backup):
     #     # e.g.: node_to_backup = 'fa20-cs425-g29-06.cs.illinois.edu'
     #     # 遍历所有文件，找到该node上存的文件，向其他三个node依次发出"REPLICA a.txt target_node"的消息；
@@ -1070,6 +1070,7 @@ class DateNode:
                 if pasted > t_failed and statues in {"ACTIVE", "JOIN", "SUSPECT"}:
                     self.MyList.remove(node_id)
                     # TODO: call master backup_node function
+                    backup_node(node_id)
 
                 # if already FAIL or SUSPECT or LEFT, do nothing
                 elif pasted > t_suspect and statues in {"ACTIVE", "JOIN"}:
