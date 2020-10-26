@@ -1074,7 +1074,8 @@ class DateNode:
                 if pasted > t_failed and statues in {"ACTIVE", "JOIN", "SUSPECT"}:
                     self.MyList.remove(node_id)
                     # TODO: call master backup_node function
-                    backup_node(node_id)
+                    if isMaster:
+                        backup_node(node_id)
 
                 # if already FAIL or SUSPECT or LEFT, do nothing
                 elif pasted > t_suspect and statues in {"ACTIVE", "JOIN"}:
