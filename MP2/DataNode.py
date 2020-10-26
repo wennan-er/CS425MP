@@ -646,7 +646,7 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
     def SEND(self, sdfsfilename, target_DataNode):
 
         #peer_node_address = findNodeAddress(target_DataNode)
-        peer_node_address = self.get_peerserver_address(target_DataNode)
+        peer_node_address = (target_DataNode, DATANODE_SERVER_PORT)
         sdfsfile = open(sdfsfilename, "rb")
 
         # a client communicate with peer node to transfer
