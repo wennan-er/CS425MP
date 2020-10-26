@@ -158,29 +158,31 @@ def backup_node(node_to_backup):
         success = False
 
         # iterate from each owner
-        for owner in owners:
+        for backup_sender in owners:
             shuffle(member_list)
 
-            # new_owner is the target to store
-            new_owner = None
+            # backup_receiver is the target to store
+            backup_receiver = None
             for node in member_list:
                 # find a new node to store this file
                 if node not in owners:
-                    new_owner = node
+                    backup_receiver = node
                     break
-            if new_owner is None:
+
+            if backup_receiver is None:
                 print("Not enough nodes, failed to backup")
                 return
 
-            # create 'SEND filename node'
-            msg = "SEND {} {}".format(file, new_owner)
-            print("BACKUP file {}, new_owner {}".format(file, owner))
+            # create 'SEND filename receiver'
+            msg = "SEND {} {}".format(file, backup_receiver)
+            print("BACKUP file {}, new_owner {}".format(file, backup_receiver))
             print(msg)
 
             try:
                 # a client to peer node
                 peer_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                peer_client.connect((owner, DATANODE_SERVER_PORT))
+                # sent to sender
+                peer_client.connect((backup_sender, DATANODE_SERVER_PORT))
                 peer_client.send(msg.encode())
 
                 # timeout as 10
@@ -190,12 +192,12 @@ def backup_node(node_to_backup):
                 if ready[0]:
                     # receive response
                     response = peer_client.recv(MAXSIZE).decode()
-                    print("in backup, master receive from peer_node:" + response)
+                    print("in backup, master receive from sender node:" + response)
                     response = response.split(' ')
                     if response[0] == "BACKUP":
                         # add this newowner
-                        print("add {} into owner of {}".format(new_owner, file))
-                        file_list[file].append(new_owner)
+                        print("add {} into owner of {}".format(backup_receiver, file))
+                        file_list[file].append(backup_receiver)
 
                         # inc and broadrcast file list
                         global file_list_version
