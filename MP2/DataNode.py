@@ -1419,6 +1419,8 @@ class DateNode:
 
     def GET(self, localfilename, sdfsfilename):
         # TODO: start get time
+        global GETstart
+        GETstart = datetime.datetime.now()
         print("The start time of getting", datetime.datetime.now())
         try:
             # a client only connect to master
@@ -1470,6 +1472,9 @@ class DateNode:
 
                 print("already get" + sdfsfilename)
                 # TODO: end get
+                print("-----------------------------------------------------------")
+                print("Total time last for get is:",datetime.datetime.now()-GETstart)
+                print("-----------------------------------------------------------")
                 print("The end time of getting", datetime.datetime.now())
                 return
             except:
