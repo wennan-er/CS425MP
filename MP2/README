@@ -14,6 +14,12 @@ README:
 			- 'ctrl C' fail/kill
 
 			- 'LEFT' to exit
+			
+			- 'show' to show the membership list and self node id
+			
+			- 'member' heartbeat
+			
+			- 'master' to look who's the master right now
 
 			- current master node's information will be updated. Please wait a second
 
@@ -22,10 +28,9 @@ README:
 				* If current master failed, a new master will be elected
         
 
-MP2 file ops
+	MP2 file ops
 			- "put localfilename sdfsfilename"
-        
-        
+       
 			- "get sdfsfilename localfilename"
 
 			- "delete sdfsfilename"
