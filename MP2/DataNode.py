@@ -179,7 +179,7 @@ def backup_node(node_to_backup):
                     # receive response
                     response = peer_client.recv(MAXSIZE).decode()
                     print("in backup, master receive from peer_node:" + response)
-                    response = response.splits(' ')
+                    response = response.split(' ')
                     if response[0] == "BACKUP":
                         # add this newowner
                         print("add {} into owner of {}".format(new_owner, file))
