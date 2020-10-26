@@ -137,6 +137,9 @@ def backup_node(node_to_backup):
     for file, nodes in file_list.items():
         if node_to_backup in nodes:
             files_need_back_up.append(file)
+    if len(files_need_back_up) == 0:
+        print("nothing to back up!")
+        return
 
 
 
@@ -622,7 +625,8 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
             peer_client.send(msg.encode())
 
             # wait for peer node response
-            response = peer_client.recv(MAXSIZE)
+            response = peer_client.recv(MAXSIZE).decode()
+            print("response is ",response)
             if response == "ACK":
                 pass
             else:
