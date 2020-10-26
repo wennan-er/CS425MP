@@ -127,22 +127,30 @@ def backup_node(node_to_backup):
     print("Start to backup node: " + node_to_backup)
 
     # files_need_back_up = {file1:[node1,node2,node3]}
-    files_need_back_up = dict()
-    for key, value in file_list.items():
-        if node_to_backup in value:
-            peer_node = list(filter(lambda x: x != node_to_backup, value))
-            files_need_back_up[key] = peer_node
+    # files_need_back_up = dict()
+    # for key, value in file_list.items():
+    #     if node_to_backup in value:
+    #         peer_node = list(filter(lambda x: x != node_to_backup, value))
+    #         files_need_back_up[key] = peer_node
+
+    files_need_back_up = []
+    for file, nodes in file_list.items():
+        if node_to_backup in nodes:
+            files_need_back_up.append(file)
+
+
+
 
     print(node_to_backup + " failed. Backup: ")
     print(files_need_back_up)
 
     # remove the failed/left node
-    for file in files_need_back_up.keys():
+    for file in files_need_back_up:
         file_list[file].remove(node_to_backup)
 
     # back up
-    for file in files_need_back_up.keys():
-        owners = files_need_back_up[file]
+    for file in files_need_back_up:
+        owners = file_list[file]
 
         success = False
 
@@ -163,6 +171,7 @@ def backup_node(node_to_backup):
 
             # create 'SEND filename node'
             msg = "SEND {} {}".format(file, new_owner)
+            print("BACKUP file {}, new_owner {}".format(file, owner))
             print(msg)
 
             try:
@@ -190,7 +199,7 @@ def backup_node(node_to_backup):
                         file_list_version = file_list_version + 1
                         broadcast_file_list()
 
-                        print("Replica file {} of failed node {} success!".format(key, node_to_backup))
+                        print("Replica file {} of failed node {} success!".format(file , node_to_backup))
                         peer_client.close()
                         return
 
@@ -204,7 +213,7 @@ def backup_node(node_to_backup):
                 print(type(ex))
                 print(ex)
 
-    print("Replica file {} of failed node {} failed!".format(key, node_to_backup))
+    print("Replica file {} of failed node {} failed!".format(file, node_to_backup))
 
 
 """
