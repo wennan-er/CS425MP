@@ -711,7 +711,7 @@ class DataNodeServerHandler(socketserver.BaseRequestHandler):
         sdfsfile.close()
         peer_client.close()
 
-        print("a thread to " + peer_node_address + "finished SENDING JOB")
+        # print("a thread to " + peer_node_address + "finished SENDING JOB")
         # ++++++        already back up             ++++++
 
         # send a confirm information to master
